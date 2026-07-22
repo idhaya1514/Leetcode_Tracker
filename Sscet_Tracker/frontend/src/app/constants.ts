@@ -11,8 +11,8 @@ export const DEPARTMENTS = [
 ];
 
 export const ACADEMIC_YEARS = [
-  "First Year",
-  "Second Year",
-  "Third Year",
-  "Final Year"
+  "I",
+  "II",
+  "III",
+  "IV"
 ];

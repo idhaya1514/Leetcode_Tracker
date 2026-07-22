@@ -30,7 +30,7 @@ export default function StaffLayout({ onLogout, staff }: { onLogout: () => void,
       <div className="flex-1 ml-64 flex flex-col h-screen">
         <Topbar userRole={staff?.name || "Staff Member"} onLogout={() => { onLogout(); navigate('/'); }} />
         <main className="flex-1 overflow-y-auto p-6 animate-in fade-in duration-500">
-          <Outlet />
+          <Outlet context={{ staff }} />
         </main>
       </div>
     </div>

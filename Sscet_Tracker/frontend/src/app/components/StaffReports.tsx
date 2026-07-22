@@ -36,10 +36,8 @@ export default function StaffReports() {
 
   const handleDownload = (format: 'pdf' | 'excel') => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      toast.success(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report downloaded as ${format.toUpperCase()} successfully!`);
-    }, 2000);
+    setIsGenerating(false);
+    toast.success(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report downloaded as ${format.toUpperCase()} successfully!`);
   };
 
   return (

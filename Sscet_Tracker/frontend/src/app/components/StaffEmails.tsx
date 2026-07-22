@@ -32,16 +32,45 @@ export default function StaffEmails() {
     s.registerNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
+  const [isSendingCongrats, setIsSendingCongrats] = useState(false);
+
   const handleSendEmail = (studentName: string) => {
     toast.success(`Warning email sent successfully to ${studentName}`);
   };
 
-  const handleBulkEmail = () => {
-    setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
-      toast.success(`Warning emails sent to all ${pendingStudents.length} pending students!`);
-    }, 1500);
+  const handleBulkReminders = async () => {
+    setIsSendingReminders(true);
+    try {
+      const res = await fetch('http://localhost:3000/api/email/remind', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Success! Sent ${data.successCount}, Failed ${data.failedCount} reminders.`);
+      } else {
+        toast.error(data.error || 'Failed to send reminders.');
+      }
+    } catch (e: any) {
+      toast.error('Network error while sending reminders.');
+    } finally {
+      setIsSendingReminders(false);
+    }
+  };
+
+  const handleBulkCongrats = async () => {
+    setIsSendingCongrats(true);
+    try {
+      const res = await fetch('http://localhost:3000/api/email/congratulate', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Success! Sent ${data.successCount}, Failed ${data.failedCount} congratulations.`);
+      } else {
+        toast.error(data.error || 'Failed to send congratulations.');
+      }
+    } catch (e: any) {
+      toast.error('Network error while sending congratulations.');
+    } finally {
+      setIsSendingCongrats(false);
+    }
   };
 
   return (
@@ -55,18 +84,33 @@ export default function StaffEmails() {
           </h1>
           <p className="text-slate-500 text-sm mt-1">Send automated reminders to students who haven't completed their daily tasks.</p>
         </div>
-        <button 
-          onClick={handleBulkEmail}
-          disabled={isSending || pendingStudents.length === 0}
-          className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSending ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-          Email All Pending ({pendingStudents.length})
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleBulkCongrats}
+            disabled={isSendingCongrats}
+            className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSendingCongrats ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            Send Congratulations Emails
+          </button>
+          
+          <button 
+            onClick={handleBulkReminders}
+            disabled={isSendingReminders || pendingStudents.length === 0}
+            className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-lg hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSendingReminders ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            Email All Pending ({pendingStudents.length})
+          </button>
+        </div>
       </div>
 
       <div className="relative max-w-md">

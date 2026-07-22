@@ -40,7 +40,6 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
       return;
     }
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 400));
     if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       onLogin();
     } else {

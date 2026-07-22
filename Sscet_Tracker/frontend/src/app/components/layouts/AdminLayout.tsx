@@ -10,6 +10,7 @@ export default function AdminLayout({ onLogout }: { onLogout: () => void }) {
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { label: 'Student Management', path: '/admin/students', icon: Users },
     { label: 'Staff Management', path: '/admin/staff', icon: UserCog },
+    { label: 'Student Assignment', path: '/admin/assignment', icon: Database },
 
     { label: 'LeetCode Performance', path: '/admin/performance', icon: TrendingUp },
     { label: 'Settings', path: '/admin/settings', icon: Settings },

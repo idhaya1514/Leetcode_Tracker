@@ -9,6 +9,8 @@ import jwt from 'jsonwebtoken';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import ws from 'ws';
+import emailRoutes from './routes/emailRoutes';
+import { initializeCronJobs } from './services/cronService';
 
 neonConfig.webSocketConstructor = ws;
 
@@ -25,6 +27,12 @@ app.use(cors());
 app.use(express.json());
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+// --- Email Routes ---
+app.use('/api/email', emailRoutes);
+
+// --- Initialize Cron Jobs ---
+initializeCronJobs();
 
 // --- Health Check ---
 app.get('/api/health', (req, res) => {
@@ -138,29 +146,33 @@ app.post('/api/students/sync-leetcode', async (req, res) => {
     });
 
     let syncCount = 0;
-    for (const student of students) {
-      if (student.leetCodeProfile?.username) {
-        try {
-          const apiRes = await fetch(`https://leetcode-api-faisalshohag.vercel.app/${student.leetCodeProfile.username}`);
-          if (apiRes.ok) {
-            const data = await apiRes.json();
-            if (data && data.totalSolved !== undefined) {
-              await prisma.leetCodeProfile.update({
-                where: { id: student.leetCodeProfile.id },
-                data: {
-                  totalSolved: data.totalSolved,
-                  easySolved: data.easySolved || 0,
-                  mediumSolved: data.mediumSolved || 0,
-                  hardSolved: data.hardSolved || 0
-                }
-              });
-              syncCount++;
+    const chunkSize = 10;
+    for (let i = 0; i < students.length; i += chunkSize) {
+      const chunk = students.slice(i, i + chunkSize);
+      await Promise.all(chunk.map(async (student) => {
+        if (student.leetCodeProfile?.username) {
+          try {
+            const apiRes = await fetch(`https://leetcode-api-faisalshohag.vercel.app/${student.leetCodeProfile.username}`);
+            if (apiRes.ok) {
+              const data = await apiRes.json();
+              if (data && data.totalSolved !== undefined) {
+                await prisma.leetCodeProfile.update({
+                  where: { id: student.leetCodeProfile.id },
+                  data: {
+                    totalSolved: data.totalSolved,
+                    easySolved: data.easySolved || 0,
+                    mediumSolved: data.mediumSolved || 0,
+                    hardSolved: data.hardSolved || 0
+                  }
+                });
+                syncCount++;
+              }
             }
+          } catch (e) {
+            console.error(`Failed to sync ${student.leetCodeProfile.username}`);
           }
-        } catch (e) {
-          console.error(`Failed to sync ${student.leetCodeProfile.username}`);
         }
-      }
+      }));
     }
     res.json({ message: 'Sync complete', synced: syncCount });
   } catch (error) {

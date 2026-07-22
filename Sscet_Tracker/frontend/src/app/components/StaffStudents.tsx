@@ -1,23 +1,36 @@
 import { useState, useEffect } from "react";
 import { Users, Search, ChevronRight, Activity, Target } from "lucide-react";
 import { toast } from "sonner";
-import { getStudents } from "../services/api";
+import { useOutletContext } from "react-router";
+import { getStudents, getStaffAssignments } from "../services/api";
 
 export default function StaffStudents() {
   const [students, setStudents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { staff } = useOutletContext<{ staff: any }>();
+
   useEffect(() => {
-    loadStudents();
-  }, []);
+    if (staff?.staffId) {
+      loadStudents();
+    }
+  }, [staff]);
 
   const loadStudents = async () => {
     setIsLoading(true);
     try {
-      const data = await getStudents();
-      // Simulate assigning students to this staff
-      setStudents(data.slice(0, 35));
+      const [allStudents, assignments] = await Promise.all([
+        getStudents(),
+        getStaffAssignments()
+      ]);
+      
+      const myStudentRegNos = new Set(
+        assignments.filter(a => a.staffId === staff.staffId).map(a => a.studentRegisterNumber)
+      );
+      
+      const myStudents = allStudents.filter(s => myStudentRegNos.has(s.registerNumber));
+      setStudents(myStudents);
     } catch (error: any) {
       toast.error("Failed to load students");
     } finally {
@@ -78,7 +91,7 @@ export default function StaffStudents() {
                     <td className="px-5 py-3">
                       <div>
                         <p className="text-[12px] font-medium text-slate-700">{student.department?.split("(")[1]?.replace(")","") || student.department}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{student.academicYear || "First Year"} - Sec A</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{student.academicYear || "I"} - Sec A</p>
                       </div>
                     </td>
                     <td className="px-5 py-3">

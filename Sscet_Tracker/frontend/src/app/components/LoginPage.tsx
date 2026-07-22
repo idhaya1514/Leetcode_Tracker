@@ -188,6 +188,7 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
       if (!name.trim()) return setError("Please enter your full name.");
       if (!registerNumber.trim()) return setError("Please enter your register number.");
       if (!email.trim()) return setError("Please enter your email.");
+      if (!email.trim().toLowerCase().endsWith("@shanmugha.edu.in")) return setError("Please use your @shanmugha.edu.in institutional email.");
       setStep(2);
     } else if (step === 2) {
       if (!department) return setError("Please select a department.");
@@ -378,7 +379,7 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 1: Personal Info</h3>
                     <Field label="Full Name" icon={User}><input type="text" value={name} onChange={e => setName(e.target.value)} className={inputCls} placeholder="John Doe" /></Field>
                     <Field label="Register Number" icon={Hash}><input type="text" value={registerNumber} onChange={e => setRegisterNumber(e.target.value)} className={inputCls} placeholder="E23AI011" /></Field>
-                    <Field label="College Email" icon={Mail}><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="john@example.com" /></Field>
+                    <Field label="College Email" icon={Mail}><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="student@shanmugha.edu.in" /></Field>
                   </div>
                 )}
 

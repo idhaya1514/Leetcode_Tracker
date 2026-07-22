@@ -30,7 +30,7 @@ const DEPT_SHORT: Record<string, string> = {
 };
 
 const ACADEMIC_YEARS = [
-  "First Year", "Second Year", "Third Year", "Final Year"
+  "I", "II", "III", "IV"
 ];
 
 export default function StudentPerformance({ onBack }: StudentPerformanceProps) {

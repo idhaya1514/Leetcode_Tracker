@@ -1,21 +1,36 @@
 import { useState, useEffect } from "react";
 import { Users, Activity, Code2, Target, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { useOutletContext } from "react-router";
+import { getStaffAssignments } from "../services/api";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
 export default function StaffDashboard() {
+  const { staff } = useOutletContext<{ staff: any }>();
   const [isLoading, setIsLoading] = useState(false);
+  const [totalStudents, setTotalStudents] = useState(0);
 
   useEffect(() => {
+    loadDashboard();
+  }, [staff]);
+
+  const loadDashboard = async () => {
     setIsLoading(true);
-    // Simulate loading data
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
+    try {
+      if (staff?.staffId) {
+        const assignments = await getStaffAssignments();
+        const myStudents = assignments.filter(a => a.staffId === staff.staffId);
+        setTotalStudents(myStudents.length);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsLoading(false);
+  };
 
   // Mock data for Staff Dashboard
-  const totalStudents = 0;
   const presentToday = 0;
   const absentToday = 0;
   const completedTarget = 0;

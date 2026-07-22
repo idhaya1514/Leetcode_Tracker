@@ -66,7 +66,7 @@ export default function StudentManagement() {
         name: s.name,
         registerNumber: s.registerNumber,
         department: s.department,
-        academicYear: s.academicYear || "First Year",
+        academicYear: s.academicYear || "I",
         email: s.email,
         leetCodeUrl: s.leetCodeUrl,
         leetCodeUsername: s.leetCodeUsername,
@@ -84,6 +84,7 @@ export default function StudentManagement() {
     if (!formData.name.trim()) return toast.error("Name is required");
     if (!formData.registerNumber.trim()) return toast.error("Register number is required");
     if (!formData.leetCodeUrl) return toast.error("LeetCode Profile URL is required");
+    if (formData.email && !formData.email.trim().toLowerCase().endsWith("@shanmugha.edu.in")) return toast.error("Only @shanmugha.edu.in email addresses are allowed.");
     
     setIsSaving(true);
     try {
@@ -141,7 +142,8 @@ export default function StudentManagement() {
     return students.filter(s => {
       const matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.registerNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const matchYear = filterYear === "All" || s.academicYear === filterYear;
-      const matchDept = filterDept === "All" || s.department === filterDept;
+      const shortDept = filterDept === "All" ? "All" : (filterDept.split("(")[1]?.replace(")","") || filterDept);
+      const matchDept = filterDept === "All" || s.department === shortDept;
       return matchSearch && matchYear && matchDept;
     });
   }, [students, searchTerm, filterYear, filterDept]);
@@ -323,7 +325,7 @@ export default function StudentManagement() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email Address</label>
-                <input type="email" placeholder="student@example.com" value={formData.email || ''} onChange={e=>setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-md text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-100 shadow-sm" />
+                <input type="email" placeholder="student@shanmugha.edu.in" value={formData.email || ''} onChange={e=>setFormData({...formData, email: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-md text-sm outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-100 shadow-sm" />
               </div>
 
               <div>

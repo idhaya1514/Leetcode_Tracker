@@ -160,6 +160,36 @@ function lsSaveResults(r: ExamResult[]) {
   lsSet("exam_portal_results", r);
 }
 
+export interface StaffStudentAssignment {
+  staffId: string;
+  studentRegisterNumber: string;
+  assignedAt: string;
+}
+
+export interface AssignmentHistoryRecord {
+  id: string;
+  registerNumber: string;
+  studentName: string;
+  previousStaff: string | null;
+  newStaff: string;
+  assignedBy: string;
+  assignedAt: string;
+}
+
+export function lsStaffAssignments(): StaffStudentAssignment[] {
+  return lsGet<StaffStudentAssignment[]>("exam_portal_staff_assignments", []);
+}
+export function lsSaveStaffAssignments(a: StaffStudentAssignment[]) {
+  lsSet("exam_portal_staff_assignments", a);
+}
+
+export function lsAssignmentsHistory(): AssignmentHistoryRecord[] {
+  return lsGet<AssignmentHistoryRecord[]>("exam_portal_assignment_history", []);
+}
+export function lsSaveAssignmentsHistory(a: AssignmentHistoryRecord[]) {
+  lsSet("exam_portal_assignment_history", a);
+}
+
 // ─── Unified runner ───────────────────────────────────────────────────────────
 
 async function run<T>(
@@ -167,12 +197,25 @@ async function run<T>(
   expressCall: () => Promise<Response>,
   localCall: () => T,
 ): Promise<T> {
+  if (isSupabaseConfigured && supabaseCall) {
+    try {
+      return await supabaseCall();
+    } catch (e: any) {
+      console.error("Supabase Error:", e);
+    }
+  }
+
   try {
     const res = await expressCall();
     return await handleResponse(res);
   } catch (e: any) {
-    console.error("API Error:", e);
-    throw new Error(e.message || "Failed to connect to the backend server.");
+    console.warn("Express API failed, falling back to local storage:", e.message);
+    try {
+      // Fallback to local storage
+      return localCall();
+    } catch (localError: any) {
+      throw new Error(localError.message || "Operation failed in fallback mode.");
+    }
   }
 }
 
@@ -180,13 +223,25 @@ async function run<T>(
 //  STUDENT APIs
 // ════════════════════════════════════════════════════════════════════════════════
 
-export async function getStudents(): Promise<Student[]> {
+let cachedStudents: Student[] | null = null;
+let lastStudentsFetchTime = 0;
+const CACHE_TTL = 30000; // 30 seconds
+
+export async function getStudents(forceRefresh = false): Promise<Student[]> {
+  const now = Date.now();
+  if (!forceRefresh && cachedStudents && (now - lastStudentsFetchTime < CACHE_TTL)) {
+    return cachedStudents;
+  }
+  
   try {
     const res = await fetch('http://localhost:3000/api/students');
     if (!res.ok) throw new Error('Failed to fetch');
-    return await res.json();
+    cachedStudents = await res.json();
+    lastStudentsFetchTime = now;
+    return cachedStudents || [];
   } catch (err) {
     console.error('PostgreSQL API getStudents Error:', err);
+    if (cachedStudents) return cachedStudents; // return stale cache if error
     return [];
   }
 }
@@ -426,6 +481,9 @@ export async function createStudent(
 ): Promise<Student> {
   return run(
     async () => {
+      if (student.email && !student.email.trim().toLowerCase().endsWith('@shanmugha.edu.in')) {
+        throw new Error('Only @shanmugha.edu.in email addresses are allowed.');
+      }
       if (student.password && student.email) {
         const { error: authError } = await supabase!.auth.signUp({
           email: student.email.trim().toLowerCase(),
@@ -489,6 +547,9 @@ export async function createStudent(
         body: JSON.stringify(student),
       }),
     () => {
+      if (student.email && !student.email.trim().toLowerCase().endsWith('@shanmugha.edu.in')) {
+        throw new Error('Only @shanmugha.edu.in email addresses are allowed.');
+      }
       const all = lsStudents();
       if (
         all.some(
@@ -566,6 +627,9 @@ export async function updateStudent(
         body: JSON.stringify(student),
       }),
     () => {
+      if (student.email && !student.email.trim().toLowerCase().endsWith('@shanmugha.edu.in')) {
+        throw new Error('Only @shanmugha.edu.in email addresses are allowed.');
+      }
       const McKinseyAll = lsStudents();
       const idx = McKinseyAll.findIndex((s) => s.id === Number(id));
       if (idx === -1) throw new Error("Student not found");
@@ -1857,4 +1921,160 @@ export async function updateMobileNumber(registerNumber: string, mobileNumber: s
     body: JSON.stringify({ mobileNumber }),
   });
   return handleResponse(res);
+}
+
+// ─── Staff Student Assignment Module API ──────────────────────────────────────
+
+let cachedStaffs: any[] | null = null;
+let lastStaffsFetchTime = 0;
+
+export async function getStaffs(forceRefresh = false): Promise<any[]> {
+  const now = Date.now();
+  if (!forceRefresh && cachedStaffs && (now - lastStaffsFetchTime < CACHE_TTL)) {
+    return cachedStaffs;
+  }
+  
+  const res = await run(
+    async () => { throw new Error("Supabase implementation not ready"); },
+    () => fetch(`${API_BASE_URL}/staff/all`),
+    () => {
+      // Mock staffs
+      return [
+        { staffId: "STF-001", name: "Dr. Arun Kumar", department: "Computer Science" },
+        { staffId: "STF-002", name: "Prof. Sarah", department: "Information Technology" },
+      ];
+    }
+  );
+  
+  cachedStaffs = res;
+  lastStaffsFetchTime = now;
+  return res;
+}
+
+let cachedAssignments: StaffStudentAssignment[] | null = null;
+let lastAssignmentsFetchTime = 0;
+
+export async function getStaffAssignments(forceRefresh = false): Promise<StaffStudentAssignment[]> {
+  const now = Date.now();
+  if (!forceRefresh && cachedAssignments && (now - lastAssignmentsFetchTime < CACHE_TTL)) {
+    return cachedAssignments;
+  }
+  
+  const res = await run(
+    async () => { throw new Error("Supabase implementation not ready"); },
+    () => fetch(`${API_BASE_URL}/staff/assignments`),
+    () => lsStaffAssignments()
+  );
+  
+  cachedAssignments = res;
+  lastAssignmentsFetchTime = now;
+  return res;
+}
+
+let cachedHistory: AssignmentHistoryRecord[] | null = null;
+let lastHistoryFetchTime = 0;
+
+export async function getAssignmentHistory(forceRefresh = false): Promise<AssignmentHistoryRecord[]> {
+  const now = Date.now();
+  if (!forceRefresh && cachedHistory && (now - lastHistoryFetchTime < CACHE_TTL)) {
+    return cachedHistory;
+  }
+  
+  const res = await run(
+    async () => { throw new Error("Supabase implementation not ready"); },
+    () => fetch(`${API_BASE_URL}/staff/assignment_history`),
+    () => lsAssignmentsHistory()
+  );
+  
+  cachedHistory = res;
+  lastHistoryFetchTime = now;
+  return res;
+}
+
+export async function assignStudentsToStaff(
+  staffId: string, 
+  registerNumbers: string[], 
+  adminName: string
+): Promise<{ success: boolean; message?: string }> {
+  return run(
+    async () => { throw new Error("Supabase implementation not ready"); },
+    () => fetch(`${API_BASE_URL}/staff/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ staffId, registerNumbers, adminName })
+    }),
+    () => {
+      const assignments = lsStaffAssignments();
+      const history = lsAssignmentsHistory();
+      const students = lsStudents();
+      
+      for (const regNo of registerNumbers) {
+        const student = students.find(s => s.registerNumber === regNo);
+        if (!student) continue;
+
+        const existingIdx = assignments.findIndex(a => a.studentRegisterNumber === regNo);
+        let prevStaff = null;
+        if (existingIdx >= 0) {
+          prevStaff = assignments[existingIdx].staffId;
+          assignments.splice(existingIdx, 1);
+        }
+
+        assignments.push({
+          staffId,
+          studentRegisterNumber: regNo,
+          assignedAt: new Date().toISOString()
+        });
+
+        history.push({
+          id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+          registerNumber: regNo,
+          studentName: student.name,
+          previousStaff: prevStaff,
+          newStaff: staffId,
+          assignedBy: adminName,
+          assignedAt: new Date().toISOString()
+        });
+      }
+      lsSaveStaffAssignments(assignments);
+      lsSaveAssignmentsHistory(history);
+      return { success: true };
+    }
+  );
+}
+
+export async function removeStudentAssignment(
+  registerNumber: string,
+  adminName: string
+): Promise<{ success: boolean }> {
+  return run(
+    async () => { throw new Error("Supabase implementation not ready"); },
+    () => fetch(`${API_BASE_URL}/staff/assignments/${registerNumber}`, { method: "DELETE" }),
+    () => {
+      const assignments = lsStaffAssignments();
+      const history = lsAssignmentsHistory();
+      const students = lsStudents();
+      
+      const existingIdx = assignments.findIndex(a => a.studentRegisterNumber === registerNumber);
+      if (existingIdx >= 0) {
+        const prevStaff = assignments[existingIdx].staffId;
+        assignments.splice(existingIdx, 1);
+        
+        const student = students.find(s => s.registerNumber === registerNumber);
+        if (student) {
+          history.push({
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            registerNumber,
+            studentName: student.name,
+            previousStaff: prevStaff,
+            newStaff: "UNASSIGNED",
+            assignedBy: adminName,
+            assignedAt: new Date().toISOString()
+          });
+        }
+      }
+      lsSaveStaffAssignments(assignments);
+      lsSaveAssignmentsHistory(history);
+      return { success: true };
+    }
+  );
 }

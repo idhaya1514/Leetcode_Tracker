@@ -74,14 +74,12 @@ export default function StaffLogin({
 
     try {
       // Mock login for now
-      setTimeout(() => {
-        onLogin({
-          name: staffName,
-          id: staffId,
-          department: department,
-          email: "staff@college.edu"
-        });
-      }, 1000);
+      onLogin({
+        name: staffName,
+        id: staffId,
+        department: department,
+        email: "staff@college.edu"
+      });
     } catch (err) {
       setError("Server connection error.");
     } finally {
