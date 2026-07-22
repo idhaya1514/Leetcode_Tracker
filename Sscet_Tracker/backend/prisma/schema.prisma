@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Organization & Structure ---
+
+model Department {
+  id        String   @id @default(uuid())
+  code      String   @unique // e.g. "IT", "CSE"
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  Student[]
+  staffs    Staff[]
+}
+
+model AcademicYear {
+  id        String   @id @default(uuid())
+  year      String   @unique // e.g. "First Year"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  Student[]
+}
+
+model Section {
+  id        String   @id @default(uuid())
+  name      String   @unique // e.g. "A", "B"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  Student[]
+}
+
+// --- Users ---
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Staff {
+  id           String     @id @default(uuid())
+  staffId      String     @unique
+  email        String     @unique
+  name         String
+  password     String
+  departmentId String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  department   Department? @relation(fields: [departmentId], references: [id])
+  assignedStudents StaffStudentAssignment[]
+}
+
+model StaffStudentAssignment {
+  id                    String   @id @default(uuid())
+  staffId               String
+  studentRegisterNumber String
+  assignedAt            DateTime @default(now())
+
+  staff                 Staff    @relation(fields: [staffId], references: [staffId], onDelete: Cascade)
+  student               Student  @relation(fields: [studentRegisterNumber], references: [registerNumber], onDelete: Cascade)
+
+  @@unique([staffId, studentRegisterNumber])
+}
+
+model Student {
+  id             String        @id @default(uuid())
+  registerNumber String        @unique
+  email          String?       @unique
+  name           String
+  password       String?
+  mobileNumber   String?
+  
+  departmentId   String?
+  academicYearId String?
+  sectionId      String?
+  
+  department     Department?   @relation(fields: [departmentId], references: [id])
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+  section        Section?      @relation(fields: [sectionId], references: [id])
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relationships
+  leetCodeProfile    LeetCodeProfile?
+  assignments        StudentAssignment[]
+  taskSubmissions    TaskSubmission[]
+  attendanceRecords  Attendance[]
+  staffAssignments   StaffStudentAssignment[]
+}
+
+// --- LeetCode Tracking ---
+
+model LeetCodeProfile {
+  id               String   @id @default(uuid())
+  studentId        String   @unique
+  username         String   @unique
+  profileUrl       String?
+  totalSolved      Int      @default(0)
+  easySolved       Int      @default(0)
+  mediumSolved     Int      @default(0)
+  hardSolved       Int      @default(0)
+  globalRanking    Int?
+  lastSync         DateTime @default(now())
+
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  dailyProgress    DailyProgress[]
+  weeklyProgress   WeeklyProgress[]
+  monthlyProgress  MonthlyProgress[]
+}
+
+model DailyProgress {
+  id           String   @id @default(uuid())
+  profileId    String
+  date         DateTime @db.Date
+  problemsDone Int      @default(0)
+  easyDone     Int      @default(0)
+  mediumDone   Int      @default(0)
+  hardDone     Int      @default(0)
+
+  profile      LeetCodeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, date])
+}
+
+model WeeklyProgress {
+  id           String   @id @default(uuid())
+  profileId    String
+  weekNumber   Int
+  year         Int
+  problemsDone Int      @default(0)
+
+  profile      LeetCodeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, weekNumber, year])
+}
+
+model MonthlyProgress {
+  id           String   @id @default(uuid())
+  profileId    String
+  month        Int
+  year         Int
+  problemsDone Int      @default(0)
+
+  profile      LeetCodeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, month, year])
+}
+
+// --- Tasks & Assignments ---
+
+model Task {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  dueDate      DateTime?
+  createdBy    String?  // Staff ID
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  submissions  TaskSubmission[]
+  assignments  StudentAssignment[]
+}
+
+model StudentAssignment {
+  id         String   @id @default(uuid())
+  studentId  String
+  taskId     String
+  assignedAt DateTime @default(now())
+
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  task       Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskSubmission {
+  id          String   @id @default(uuid())
+  studentId   String
+  taskId      String
+  status      String   @default("PENDING") // PENDING, SUBMITTED, GRADED
+  score       Float?
+  feedback    String?
+  submittedAt DateTime @default(now())
+
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  task        Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+// --- Attendance ---
+
+model Attendance {
+  id          String   @id @default(uuid())
+  studentId   String
+  date        DateTime @db.Date
+  status      String   // PRESENT, ABSENT, LEAVE
+  remarks     String?
+  recordedAt  DateTime @default(now())
+
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, date])
+}
+
+// --- System & Logs ---
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String   // Recipient
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model EmailLog {
+  id          String   @id @default(uuid())
+  recipient   String
+  subject     String
+  status      String   // SUCCESS, FAILED
+  sentAt      DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // EXPORT, ANALYTICS
+  generatedBy String
+  fileUrl     String?
+  createdAt   DateTime @default(now())
+}
+
+model LoginHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  userType    String   // STUDENT, STAFF, ADMIN
+  ipAddress   String?
+  userAgent   String?
+  loginAt     DateTime @default(now())
+}
+
+model PasswordResetOTP {
+  id          String   @id @default(uuid())
+  email       String
+  otp         String
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model UserActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  userType    String
+  action      String
+  description String?
+  timestamp   DateTime @default(now())
+}
+
+model Settings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  updatedAt   DateTime @updatedAt
+}
