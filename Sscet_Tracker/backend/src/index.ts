@@ -416,6 +416,73 @@ app.post('/api/staff/assign', async (req, res) => {
   }
 });
 
+// --- Tasks ---
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const { 
+      taskType = "PROBLEM", 
+      title, 
+      description, 
+      difficulty, 
+      leetcodeProblem, 
+      topic, 
+      targetEasy, 
+      targetMedium, 
+      targetHard, 
+      dueDate, 
+      createdBy, 
+      studentIds 
+    } = req.body;
+    
+    // Create the task
+    const task = await prisma.task.create({
+      data: { 
+        taskType,
+        title, 
+        description, 
+        difficulty, 
+        leetcodeProblem, 
+        topic, 
+        targetEasy: targetEasy ? Number(targetEasy) : 0,
+        targetMedium: targetMedium ? Number(targetMedium) : 0,
+        targetHard: targetHard ? Number(targetHard) : 0,
+        dueDate: new Date(dueDate), 
+        createdBy 
+      }
+    });
+    
+    // Assign to students
+    if (studentIds && Array.isArray(studentIds)) {
+      const assignments = studentIds.map(studentId => ({
+        studentId,
+        taskId: task.id
+      }));
+      await prisma.studentAssignment.createMany({ data: assignments });
+    }
+    
+    res.json(task);
+  } catch (err) {
+    console.error("Create task error:", err);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+app.get('/api/tasks', async (req, res) => {
+  try {
+    const tasks = await prisma.task.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        assignments: true,
+        submissions: true
+      }
+    });
+    res.json(tasks);
+  } catch (err) {
+    console.error("Get tasks error:", err);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
 // --- Student Dashboard ---
 app.get('/api/student/dashboard/:registerNumber', async (req, res) => {
   try {

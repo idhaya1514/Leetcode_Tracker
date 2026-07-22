@@ -209,21 +209,62 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {pendingTasks.slice(0, 4).map((task: any, idx: number) => (
+                  {pendingTasks.slice(0, 4).map((assignment: any, idx: number) => {
+                    const task = assignment.task || {};
+                    
+                    if (task.taskType === "TARGET") {
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 pl-6">
+                            <div className="font-medium text-slate-800">Daily Target</div>
+                            <div className="text-xs text-slate-500 mt-0.5">Solve a specific number of problems</div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex gap-1.5 flex-wrap">
+                              {task.targetEasy > 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">{task.targetEasy} Easy</span>}
+                              {task.targetMedium > 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-100">{task.targetMedium} Med</span>}
+                              {task.targetHard > 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-100">{task.targetHard} Hard</span>}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No Due Date'}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                            </span>
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <button className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm">
+                              <Play className="w-3.5 h-3.5" /> Start
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    // PROBLEM type assignment
+                    const diffColor = task.difficulty === 'Hard' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                                      task.difficulty === 'Medium' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                                      'bg-emerald-50 text-emerald-600 border-emerald-200';
+                    return (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4 pl-6">
-                        <div className="font-medium text-slate-800">{task.title || `Task #${task.id}`}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{task.topic || 'General Programming'}</div>
+                        <div className="font-medium text-slate-800">{task.title || `Task #${task.id}`} {task.leetcodeProblem ? `(#${task.leetcodeProblem})` : ''}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{task.topic || 'Specific Problem'}</div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200">
-                          Easy
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${diffColor}`}>
+                          {task.difficulty || 'Easy'}
                         </span>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-1.5 text-sm text-slate-600">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          Today, 11:59 PM
+                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No Due Date'}
                         </div>
                       </td>
                       <td className="p-4">
@@ -237,7 +278,8 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {pendingTasks.length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-slate-500">

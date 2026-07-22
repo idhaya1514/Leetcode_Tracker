@@ -163,16 +163,26 @@ model MonthlyProgress {
 // --- Tasks & Assignments ---
 
 model Task {
-  id           String   @id @default(uuid())
-  title        String
-  description  String?
-  dueDate      DateTime?
-  createdBy    String?  // Staff ID
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  taskType        String   @default("PROBLEM") // "PROBLEM" or "TARGET"
+  title           String
+  description     String?
+  // Fields for "PROBLEM" type
+  difficulty      String?  // Easy, Medium, Hard
+  leetcodeProblem String?  // Problem number or title
+  topic           String?  // Arrays, Strings, etc.
+  // Fields for "TARGET" type
+  targetEasy      Int?     @default(0)
+  targetMedium    Int?     @default(0)
+  targetHard      Int?     @default(0)
+  
+  dueDate         DateTime?
+  createdBy       String?  // Staff ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  submissions  TaskSubmission[]
-  assignments  StudentAssignment[]
+  submissions     TaskSubmission[]
+  assignments     StudentAssignment[]
 }
 
 model StudentAssignment {

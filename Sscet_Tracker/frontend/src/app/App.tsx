@@ -184,7 +184,7 @@ export default function App() {
           <Route index element={<StudentDashboard student={student} />} />
           <Route path="tasks" element={<div className="p-8 text-slate-500">Today's Tasks (Coming Soon)</div>} />
           <Route path="leetcode" element={<StudentPerformance student={student} />} />
-          <Route path="tracker" element={<DailyTracker student={student} />} />
+          <Route path="tracker" element={<div className="p-8 text-slate-500">Daily Target (Coming Soon)</div>} />
           <Route path="performance" element={<div className="p-8 text-slate-500">Performance (Coming Soon)</div>} />
           <Route path="reports" element={<div className="p-8 text-slate-500">Reports (Coming Soon)</div>} />
           <Route path="notifications" element={<div className="p-8 text-slate-500">Notifications (Coming Soon)</div>} />
