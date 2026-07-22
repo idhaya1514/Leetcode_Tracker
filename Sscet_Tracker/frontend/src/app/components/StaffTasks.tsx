@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { CheckSquare, Calendar, Target, Plus, Search, Trash2, Tag, Hash, AlignLeft, AlertCircle, Loader2, BarChart2 } from "lucide-react";
-import { API_BASE_URL } from "../constants";
+import { API_BASE_URL } from "../services/api";
 import { toast } from "sonner";
 
 export default function StaffTasks() {
@@ -10,16 +10,20 @@ export default function StaffTasks() {
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"TARGET" | "PROBLEM">("TARGET");
   
-  const [newTask, setNewTask] = useState({
-    title: "",
-    leetcodeProblem: "",
-    difficulty: "Easy",
-    topic: "",
+  const [targetTask, setTargetTask] = useState({
     targetEasy: 0,
     targetMedium: 0,
     targetHard: 0,
     dueDate: new Date().toISOString().split('T')[0]
   });
+
+  const [problemTasks, setProblemTasks] = useState([{
+    title: "",
+    leetcodeProblem: "",
+    difficulty: "Easy",
+    topic: "",
+    dueDate: new Date().toISOString().split('T')[0]
+  }]);
 
   const fetchTasks = async () => {
     try {
@@ -43,46 +47,71 @@ export default function StaffTasks() {
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (activeTab === "PROBLEM" && (!newTask.title || !newTask.leetcodeProblem)) {
-      toast.error("Title and Problem Number are required!");
-      return;
+    if (activeTab === "PROBLEM") {
+      const invalidTasks = problemTasks.filter(pt => !pt.title || !pt.leetcodeProblem);
+      if (invalidTasks.length > 0) {
+        toast.error("Title and Problem Number are required for all problems!");
+        return;
+      }
     }
 
-    if (activeTab === "TARGET" && newTask.targetEasy === 0 && newTask.targetMedium === 0 && newTask.targetHard === 0) {
+    if (activeTab === "TARGET" && targetTask.targetEasy === 0 && targetTask.targetMedium === 0 && targetTask.targetHard === 0) {
       toast.error("Please set at least one target!");
       return;
     }
     
     setSubmitting(true);
     try {
-      const payload = {
-        ...newTask,
-        taskType: activeTab,
-        title: activeTab === "TARGET" ? "Daily Target" : newTask.title
-      };
-
-      const res = await fetch(`${API_BASE_URL}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error("Failed to assign task");
+      if (activeTab === "TARGET") {
+        const payload = {
+          ...targetTask,
+          taskType: "TARGET",
+          title: "Daily Target",
+          difficulty: "Mixed",
+          leetcodeProblem: "N/A"
+        };
+        const res = await fetch(`${API_BASE_URL}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Failed to assign target task");
+      } else {
+        await Promise.all(problemTasks.map(async (pt) => {
+          const payload = {
+            ...pt,
+            taskType: "PROBLEM",
+            targetEasy: 0,
+            targetMedium: 0,
+            targetHard: 0
+          };
+          const res = await fetch(`${API_BASE_URL}/tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(`Failed to assign problem ${pt.title}`);
+        }));
+      }
       
-      toast.success("Task assigned successfully!");
+      toast.success(activeTab === "TARGET" ? "Target task assigned successfully!" : `${problemTasks.length} problem(s) assigned successfully!`);
       fetchTasks();
       setIsAssigning(false);
-      setNewTask({
-        title: "",
-        leetcodeProblem: "",
-        difficulty: "Easy",
-        topic: "",
+      setTargetTask({
         targetEasy: 0,
         targetMedium: 0,
         targetHard: 0,
         dueDate: new Date().toISOString().split('T')[0]
       });
-    } catch (err) {
-      toast.error("Error creating task");
+      setProblemTasks([{
+        title: "",
+        leetcodeProblem: "",
+        difficulty: "Easy",
+        topic: "",
+        dueDate: new Date().toISOString().split('T')[0]
+      }]);
+    } catch (err: any) {
+      toast.error(err.message || "Error creating task");
     } finally {
       setSubmitting(false);
     }
@@ -153,8 +182,8 @@ export default function StaffTasks() {
                   </label>
                   <input 
                     type="date" 
-                    value={newTask.dueDate} 
-                    onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} 
+                    value={targetTask.dueDate} 
+                    onChange={(e) => setTargetTask({...targetTask, dueDate: e.target.value})} 
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium" 
                     required
                   />
@@ -163,8 +192,8 @@ export default function StaffTasks() {
                   <label className="block text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-2">Easy Target</label>
                   <input 
                     type="number" min="0" 
-                    value={newTask.targetEasy} 
-                    onChange={(e) => setNewTask({...newTask, targetEasy: parseInt(e.target.value) || 0})} 
+                    value={targetTask.targetEasy} 
+                    onChange={(e) => setTargetTask({...targetTask, targetEasy: parseInt(e.target.value) || 0})} 
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-semibold" 
                   />
                 </div>
@@ -172,8 +201,8 @@ export default function StaffTasks() {
                   <label className="block text-[11px] font-semibold text-orange-600 uppercase tracking-wider mb-2">Medium Target</label>
                   <input 
                     type="number" min="0" 
-                    value={newTask.targetMedium} 
-                    onChange={(e) => setNewTask({...newTask, targetMedium: parseInt(e.target.value) || 0})} 
+                    value={targetTask.targetMedium} 
+                    onChange={(e) => setTargetTask({...targetTask, targetMedium: parseInt(e.target.value) || 0})} 
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all font-semibold" 
                   />
                 </div>
@@ -181,80 +210,133 @@ export default function StaffTasks() {
                   <label className="block text-[11px] font-semibold text-rose-600 uppercase tracking-wider mb-2">Hard Target</label>
                   <input 
                     type="number" min="0" 
-                    value={newTask.targetHard} 
-                    onChange={(e) => setNewTask({...newTask, targetHard: parseInt(e.target.value) || 0})} 
+                    value={targetTask.targetHard} 
+                    onChange={(e) => setTargetTask({...targetTask, targetHard: parseInt(e.target.value) || 0})} 
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all font-semibold" 
                   />
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <AlignLeft className="w-3.5 h-3.5" /> Task Title
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Two Sum"
-                    value={newTask.title} 
-                    onChange={(e) => setNewTask({...newTask, title: e.target.value})} 
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium" 
-                  />
-                </div>
+              <div className="space-y-6 mb-6">
+                {problemTasks.map((pt, idx) => (
+                  <div key={idx} className="relative p-5 bg-slate-50/50 border border-slate-200 rounded-xl">
+                    {problemTasks.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newTasks = [...problemTasks];
+                          newTasks.splice(idx, 1);
+                          setProblemTasks(newTasks);
+                        }}
+                        className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs">{idx + 1}</span>
+                      Problem Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <AlignLeft className="w-3.5 h-3.5" /> Task Title
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Two Sum"
+                          value={pt.title} 
+                          onChange={(e) => {
+                            const newTasks = [...problemTasks];
+                            newTasks[idx].title = e.target.value;
+                            setProblemTasks(newTasks);
+                          }} 
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium shadow-sm" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <Hash className="w-3.5 h-3.5" /> Problem Number
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 1"
+                          value={pt.leetcodeProblem} 
+                          onChange={(e) => {
+                            const newTasks = [...problemTasks];
+                            newTasks[idx].leetcodeProblem = e.target.value;
+                            setProblemTasks(newTasks);
+                          }} 
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium shadow-sm" 
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" /> Difficulty
+                        </label>
+                        <select
+                          value={pt.difficulty}
+                          onChange={(e) => {
+                            const newTasks = [...problemTasks];
+                            newTasks[idx].difficulty = e.target.value;
+                            setProblemTasks(newTasks);
+                          }}
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium appearance-none shadow-sm"
+                        >
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <Tag className="w-3.5 h-3.5" /> Topic
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Arrays"
+                          value={pt.topic} 
+                          onChange={(e) => {
+                            const newTasks = [...problemTasks];
+                            newTasks[idx].topic = e.target.value;
+                            setProblemTasks(newTasks);
+                          }} 
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium shadow-sm" 
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" /> Due Date
+                        </label>
+                        <input 
+                          type="date" 
+                          value={pt.dueDate} 
+                          onChange={(e) => {
+                            const newTasks = [...problemTasks];
+                            newTasks[idx].dueDate = e.target.value;
+                            setProblemTasks(newTasks);
+                          }} 
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium shadow-sm" 
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
                 
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Hash className="w-3.5 h-3.5" /> Problem Number
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. 1"
-                    value={newTask.leetcodeProblem} 
-                    onChange={(e) => setNewTask({...newTask, leetcodeProblem: e.target.value})} 
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium" 
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> Difficulty
-                  </label>
-                  <select
-                    value={newTask.difficulty}
-                    onChange={(e) => setNewTask({...newTask, difficulty: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium appearance-none"
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Tag className="w-3.5 h-3.5" /> Topic
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Arrays"
-                    value={newTask.topic} 
-                    onChange={(e) => setNewTask({...newTask, topic: e.target.value})} 
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium" 
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-[12px] font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" /> Due Date
-                  </label>
-                  <input 
-                    type="date" 
-                    value={newTask.dueDate} 
-                    onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} 
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium" 
-                    required
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setProblemTasks([...problemTasks, {
+                    title: "", leetcodeProblem: "", difficulty: "Easy", topic: "", dueDate: new Date().toISOString().split('T')[0]
+                  }])}
+                  className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-semibold text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/50 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Another Problem
+                </button>
               </div>
             )}
             

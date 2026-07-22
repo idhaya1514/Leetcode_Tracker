@@ -71,7 +71,7 @@ export default function App() {
     }
 
     if (supabase) {
-      const { data: authListener } = supabase.auth.onAuthStateChange(
+      const { data: authListener } = (supabase as any).auth.onAuthStateChange(
         async (event: any, session: any) => {
           if (event === "PASSWORD_RECOVERY") {
             const newPassword = prompt(
@@ -151,8 +151,8 @@ export default function App() {
           element={isAdminLoggedIn ? <AdminLayout onLogout={handleAdminLogout} /> : <Navigate to="/" />}
         >
           <Route index element={<AdminPanel onLogout={handleAdminLogout} onNavigate={() => {}} />} />
-          <Route path="students" element={<StudentManagement onBack={() => {}} />} />
-          <Route path="staff" element={<StaffManagement onBack={() => {}} />} />
+          <Route path="students" element={<StudentManagement />} />
+          <Route path="staff" element={<StaffManagement />} />
           <Route path="performance" element={<StudentPerformance onBack={() => {}} />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="notifications" element={<div className="p-8 text-slate-500 animate-in fade-in">Admin Notifications Center</div>} />
@@ -163,7 +163,7 @@ export default function App() {
           path="/staff" 
           element={staff ? <StaffLayout staff={staff} onLogout={handleStaffLogout} /> : <Navigate to="/" />}
         >
-          <Route index element={<StaffDashboard staff={staff} onBack={() => {}} />} />
+          <Route index element={<StaffDashboard />} />
           <Route path="students" element={<StaffStudents />} />
           <Route path="leetcode" element={<StaffLeetCode />} />
           <Route path="attendance" element={<StaffAttendance />} />
@@ -181,9 +181,9 @@ export default function App() {
           path="/student" 
           element={student ? <StudentLayout student={student} onLogout={handleStudentLogout} /> : <Navigate to="/" />}
         >
-          <Route index element={<StudentDashboard student={student} />} />
+          <Route index element={<StudentDashboard student={student!} />} />
           <Route path="tasks" element={<div className="p-8 text-slate-500">Today's Tasks (Coming Soon)</div>} />
-          <Route path="leetcode" element={<StudentPerformance student={student} />} />
+          <Route path="leetcode" element={<StudentPerformance onBack={() => {}} />} />
           <Route path="tracker" element={<div className="p-8 text-slate-500">Daily Target (Coming Soon)</div>} />
           <Route path="performance" element={<div className="p-8 text-slate-500">Performance (Coming Soon)</div>} />
           <Route path="reports" element={<div className="p-8 text-slate-500">Reports (Coming Soon)</div>} />

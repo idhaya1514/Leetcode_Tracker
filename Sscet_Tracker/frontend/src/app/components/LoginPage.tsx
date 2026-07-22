@@ -247,222 +247,238 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 relative flex flex-col items-center justify-center font-sans p-4 sm:p-8">
+    <div className="min-h-screen flex font-sans bg-white">
       
-      {/* Top Header / Branding */}
-      <div className="absolute top-8 left-0 w-full flex justify-center z-0 animate-in slide-in-from-top-6 duration-700">
-        <div className="flex flex-col items-center text-slate-800">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mb-3 shadow-md shadow-blue-600/20">
-            <Building2 className="w-6 h-6 text-white" />
+      {/* Left Column (Image & Overlay) */}
+      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <img 
+          src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=2000&auto=format&fit=crop" 
+          className="absolute inset-0 w-full h-full object-cover" 
+          alt="Campus Background" 
+        />
+        
+        {/* Overlay Card matching the reference */}
+        <div className="relative z-10 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-10 rounded-2xl max-w-[440px] text-left shadow-2xl mt-12">
+          <div className="absolute -top-[42px] left-1/2 -translate-x-1/2 bg-slate-800/80 backdrop-blur-md px-8 py-2.5 rounded-t-xl border border-slate-700/50 border-b-0 whitespace-nowrap">
+             <p className="text-slate-300 text-[13px] font-semibold tracking-wide">Maintained by SSCET Trackers</p>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">SSCET Portal</h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">LeetCode Analytics System</p>
+          
+          <img src="/logo.png" alt="SSCET Logo" className="w-32 mb-6" />
+          
+          <h1 className="text-white text-4xl font-black tracking-tight mb-2 leading-tight">
+            Welcome to<br />
+            <span className="text-amber-400">LeetCode Tracker SSCET</span>
+          </h1>
+          <div className="w-16 h-1 bg-amber-400 rounded-full mb-6"></div>
+          
+          <p className="text-slate-300 text-[15px] leading-relaxed mb-8">
+            Your learning journey starts here.<br/>
+            Access courses, connect with peers,<br/>
+            and achieve your goals.
+          </p>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <Building2 className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-slate-300 text-sm font-medium">Trusted by SSCET Educational Institutions</p>
+            </div>
+            <div className="w-full h-[1px] bg-slate-700/50"></div>
+            <div className="flex items-start gap-4">
+              <GraduationCap className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-slate-300 text-sm font-medium">Empowering students and faculty through quality education</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-md relative z-10 mt-24">
+      {/* Right Column (Login Panel) */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-y-auto">
         
-        {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+        <div className="w-full max-w-[400px]">
           
+          <div className="mb-8">
+            <h2 className="text-[28px] font-bold text-slate-800 mb-1 tracking-tight">Welcome back</h2>
+            <p className="text-slate-500 text-sm">Log in to SSCET Learning Management System</p>
+          </div>
+
           {/* Tab Switcher */}
-          <div className="flex border-b border-slate-100 bg-slate-50/50">
+          <div className="flex mb-6 border border-slate-200 rounded-lg p-1 bg-slate-50/50">
             {(["student", "admin", "staff"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setError(""); setMode("login"); setStep(1); }}
-                className={`flex-1 py-3.5 text-sm font-bold capitalize transition-all duration-300 relative ${
-                  activeTab === tab ? "text-blue-700 bg-white" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
+                className={`flex-1 py-2 text-sm font-bold capitalize transition-all duration-300 rounded-md ${
+                  activeTab === tab ? "text-blue-700 bg-white shadow-sm border border-slate-200" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                 }`}
               >
                 {tab}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600" />
-                )}
               </button>
             ))}
           </div>
 
-          <div className="p-8">
-            {error && (
-              <div className="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 text-sm font-medium rounded-r-lg flex items-start gap-3 animate-in slide-in-from-bottom-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <p>{error}</p>
-              </div>
-            )}
+          {error && (
+            <div className="mb-6 p-4 bg-rose-100/50 border border-rose-200 text-rose-800 text-sm rounded-lg animate-in slide-in-from-top-2">
+              <p className="font-bold mb-0.5 text-rose-900">Unable to log in</p>
+              <p>{error}</p>
+            </div>
+          )}
 
-            {activeTab === "student" && mode === "login" && (
-              <div className="animate-in fade-in zoom-in-95 duration-300">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-800">Student Sign In</h2>
-                  <p className="text-sm text-slate-500 mt-1">Access your performance dashboard</p>
-                </div>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <Field label="Email Address" icon={Mail}>
-                    <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className={inputCls} placeholder="Enter your college email" />
-                  </Field>
-                  <Field label="Password" icon={Lock}>
-                    <input type={showPassword ? "text" : "password"} value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={inputCls} placeholder="Enter your password" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </Field>
-
-                  {/* Feature: Remember Me & Forgot Password */}
-                  <div className="flex items-center justify-between text-xs font-bold mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30 transition-colors" />
-                      <span className="text-slate-500 group-hover:text-slate-800 transition-colors">Remember Me</span>
-                    </label>
-                    <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setResetEmail(""); }} className="text-blue-600 hover:text-blue-800 transition-colors">Forgot Password?</button>
-                  </div>
-                  
-                  <button type="submit" disabled={isLoading} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all flex justify-center mt-6">
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+          {activeTab === "student" && mode === "login" && (
+            <div className="animate-in fade-in zoom-in-95 duration-300">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <Field label="Username or email" icon={User}>
+                  <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className={inputCls} placeholder="Enter your username or email" />
+                </Field>
+                <Field label="Password" icon={Lock}>
+                  <input type={showPassword ? "text" : "password"} value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className={inputCls} placeholder="Enter your password" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </form>
+                </Field>
 
+                <div className="flex items-center justify-end text-xs font-bold mt-2">
+                  <button type="button" onClick={() => { setMode("forgot-password"); setError(""); setResetEmail(""); }} className="text-blue-600 hover:text-blue-800 transition-colors">Forgot password?</button>
+                </div>
+                
+                <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#1e73be] hover:bg-[#155a96] text-white text-[15px] font-semibold rounded-lg transition-all flex justify-center mt-6">
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log in"}
+                </button>
+              </form>
 
-                <div className="mt-8 text-center">
-                  <p className="text-sm text-slate-500">
-                    New student?{' '}
-                    <button onClick={() => setMode("register")} className="text-blue-600 font-bold hover:underline">Register Here</button>
-                  </p>
+              <div className="mt-8 text-center border-t border-slate-100 pt-6">
+                <p className="text-sm text-slate-500 mb-2">Don't have an account?</p>
+                <button onClick={() => setMode("register")} className="text-blue-600 font-bold hover:underline">Register as Student</button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "student" && mode === "register" && (
+            <div className="animate-in slide-in-from-right-4 duration-300 bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-slate-800">Registration</h2>
+                
+                {/* Progress Bar */}
+                <div className="mt-4 flex items-center justify-between relative">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 -z-10 rounded-full" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-600 -z-10 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+                  
+                  {[1,2,3,4].map(num => (
+                    <div key={num} className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${step >= num ? 'bg-blue-600 text-white' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
+                      {step > num ? <CheckCircle2 className="w-3.5 h-3.5" /> : num}
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {activeTab === "student" && mode === "register" && (
-              <div className="animate-in slide-in-from-right-4 duration-300">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-slate-800">Registration</h2>
-                  
-                  {/* Progress Bar */}
-                  <div className="mt-4 flex items-center justify-between relative">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-100 -z-10 rounded-full" />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-blue-600 -z-10 rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+              <form onSubmit={step === 4 ? handleRegister : (e) => { e.preventDefault(); handleNextStep(); }}>
+                
+                {step === 1 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 1: Personal Info</h3>
+                    <Field label="Full Name" icon={User}><input type="text" value={name} onChange={e => setName(e.target.value)} className={inputCls} placeholder="John Doe" /></Field>
+                    <Field label="Register Number" icon={Hash}><input type="text" value={registerNumber} onChange={e => setRegisterNumber(e.target.value)} className={inputCls} placeholder="E23AI011" /></Field>
+                    <Field label="College Email" icon={Mail}><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="john@example.com" /></Field>
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 2: Academic Info</h3>
+                    <Field label="Department" icon={BookOpen}>
+                      <select value={department} onChange={e => setDepartment(e.target.value)} className={inputCls + " appearance-none cursor-pointer"}>
+                        <option value="" disabled hidden>Select Department</option>
+                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Academic Year" icon={Calendar}>
+                      <select value={academicYear} onChange={e => setAcademicYear(e.target.value)} className={inputCls + " appearance-none cursor-pointer"}>
+                        <option value="" disabled hidden>Select Year</option>
+                        {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                )}
+
+                {step === 3 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 3: LeetCode</h3>
+                    <div className="p-3 bg-blue-50/50 rounded-lg mb-2 border border-blue-100 flex gap-2">
+                      <Globe className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-blue-900/80 leading-relaxed">Paste your full LeetCode profile URL to auto-extract your username.</p>
+                    </div>
+                    <Field label="Profile URL" icon={Globe}><input type="text" value={leetCodeUrl} onChange={e => setLeetCodeUrl(e.target.value)} className={inputCls} placeholder="https://leetcode.com/u/john/" /></Field>
+                    <div className="relative">
+                      <Field label="Auto-detected Username" icon={Code2}><input type="text" value={leetCodeUsername} disabled className={inputCls} placeholder="Waiting for URL..." /></Field>
+                      {extracted && <CheckCircle2 className="absolute right-3 top-[34px] w-4 h-4 text-emerald-500" />}
+                    </div>
+                  </div>
+                )}
+
+                {step === 4 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 4: Security</h3>
                     
-                    {[1,2,3,4].map(num => (
-                      <div key={num} className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${step >= num ? 'bg-blue-600 text-white' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
-                        {step > num ? <CheckCircle2 className="w-3.5 h-3.5" /> : num}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <form onSubmit={step === 4 ? handleRegister : (e) => { e.preventDefault(); handleNextStep(); }}>
-                  
-                  {step === 1 && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 1: Personal Info</h3>
-                      <Field label="Full Name" icon={User}><input type="text" value={name} onChange={e => setName(e.target.value)} className={inputCls} placeholder="John Doe" /></Field>
-                      <Field label="Register Number" icon={Hash}><input type="text" value={registerNumber} onChange={e => setRegisterNumber(e.target.value)} className={inputCls} placeholder="E23AI011" /></Field>
-                      <Field label="College Email" icon={Mail}><input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputCls} placeholder="john@example.com" /></Field>
-                    </div>
-                  )}
-
-                  {step === 2 && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 2: Academic Info</h3>
-                      <Field label="Department" icon={BookOpen}>
-                        <select value={department} onChange={e => setDepartment(e.target.value)} className={inputCls + " appearance-none cursor-pointer"}>
-                          <option value="" disabled hidden>Select Department</option>
-                          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
+                    <div className="space-y-1">
+                      <Field label="Create Password" icon={Lock}>
+                        <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className={inputCls} placeholder="Create password" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"><EyeOff className="w-4 h-4" /></button>
                       </Field>
-                      <Field label="Academic Year" icon={Calendar}>
-                        <select value={academicYear} onChange={e => setAcademicYear(e.target.value)} className={inputCls + " appearance-none cursor-pointer"}>
-                          <option value="" disabled hidden>Select Year</option>
-                          {ACADEMIC_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                      </Field>
-                    </div>
-                  )}
-
-                  {step === 3 && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 3: LeetCode</h3>
-                      <div className="p-3 bg-blue-50/50 rounded-lg mb-2 border border-blue-100 flex gap-2">
-                        <Globe className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-blue-900/80 leading-relaxed">Paste your full LeetCode profile URL to auto-extract your username.</p>
-                      </div>
-                      <Field label="Profile URL" icon={Globe}><input type="text" value={leetCodeUrl} onChange={e => setLeetCodeUrl(e.target.value)} className={inputCls} placeholder="https://leetcode.com/u/john/" /></Field>
-                      <div className="relative">
-                        <Field label="Auto-detected Username" icon={Code2}><input type="text" value={leetCodeUsername} disabled className={inputCls} placeholder="Waiting for URL..." /></Field>
-                        {extracted && <CheckCircle2 className="absolute right-3 top-[34px] w-4 h-4 text-emerald-500" />}
-                      </div>
-                    </div>
-                  )}
-
-                  {step === 4 && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 4: Security</h3>
-                      
-                      <div className="space-y-1">
-                        <Field label="Create Password" icon={Lock}>
-                          <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className={inputCls} placeholder="Create password" />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"><EyeOff className="w-4 h-4" /></button>
-                        </Field>
-                        {/* Feature: Password Strength Indicator */}
-                        {password && (
-                          <div className="flex items-center gap-2 mt-2 animate-in fade-in">
-                            <div className="flex-1 flex gap-1 h-1.5">
-                              <div className={`flex-1 rounded-full ${pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-100'}`} />
-                              <div className={`flex-1 rounded-full ${pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-100'}`} />
-                              <div className={`flex-1 rounded-full ${pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-100'}`} />
-                            </div>
-                            <span className={`text-[10px] font-bold uppercase ${pwdStrength.color.replace('bg-', 'text-')}`}>{pwdStrength.label}</span>
+                      {/* Feature: Password Strength Indicator */}
+                      {password && (
+                        <div className="flex items-center gap-2 mt-2 animate-in fade-in">
+                          <div className="flex-1 flex gap-1 h-1.5">
+                            <div className={`flex-1 rounded-full ${pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-100'}`} />
+                            <div className={`flex-1 rounded-full ${pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-100'}`} />
+                            <div className={`flex-1 rounded-full ${pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-100'}`} />
                           </div>
-                        )}
-                      </div>
-
-                      <Field label="Confirm Password" icon={Lock}>
-                        <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputCls} placeholder="Confirm password" />
-                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"><EyeOff className="w-4 h-4" /></button>
-                      </Field>
+                          <span className={`text-[10px] font-bold uppercase ${pwdStrength.color.replace('bg-', 'text-')}`}>{pwdStrength.label}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  <div className="flex gap-3 mt-8">
-                    {step > 1 && (
-                      <button type="button" onClick={() => { setError(""); setStep(step - 1); }} className="w-1/3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5">
-                        <ArrowLeft className="w-4 h-4" /> Back
-                      </button>
-                    )}
-                    <button type="submit" disabled={isLoading} className={`${step > 1 ? 'w-2/3' : 'w-full'} py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm shadow-blue-200 transition-all flex items-center justify-center gap-1.5`}>
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : step === 4 ? "Complete Setup" : <>Continue <ArrowRight className="w-4 h-4" /></>}
-                    </button>
+                    <Field label="Confirm Password" icon={Lock}>
+                      <input type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputCls} placeholder="Confirm password" />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"><EyeOff className="w-4 h-4" /></button>
+                    </Field>
                   </div>
-                </form>
+                )}
 
-                <div className="mt-6 text-center">
-                  <button onClick={() => setMode("login")} className="text-[11px] text-slate-400 hover:text-slate-600 font-bold uppercase tracking-wider hover:underline">Cancel Registration</button>
+                <div className="flex gap-3 mt-8">
+                  {step > 1 && (
+                    <button type="button" onClick={() => { setError(""); setStep(step - 1); }} className="w-1/3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5">
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                  )}
+                  <button type="submit" disabled={isLoading} className={`${step > 1 ? 'w-2/3' : 'w-full'} py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm shadow-blue-200 transition-all flex items-center justify-center gap-1.5`}>
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : step === 4 ? "Complete Setup" : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                  </button>
                 </div>
-              </div>
-            )}
+              </form>
 
-            {activeTab === "admin" && (
-              <div className="animate-in fade-in zoom-in-95 duration-300">
-                <AdminLogin onLogin={onAdminLogin} onBack={() => setActiveTab("student")} />
+              <div className="mt-6 text-center">
+                <button onClick={() => setMode("login")} className="text-[11px] text-slate-400 hover:text-slate-600 font-bold uppercase tracking-wider hover:underline">Cancel Registration</button>
               </div>
-            )}
+            </div>
+          )}
 
-            {activeTab === "staff" && (
-              <div className="animate-in fade-in zoom-in-95 duration-300">
-                <StaffLogin onLogin={onStaffLogin} onBack={() => setActiveTab("student")} />
-              </div>
-            )}
+          {activeTab === "admin" && (
+            <div className="animate-in fade-in zoom-in-95 duration-300">
+              <AdminLogin onLogin={onAdminLogin} onBack={() => setActiveTab("student")} />
+            </div>
+          )}
+
+          {activeTab === "staff" && (
+            <div className="animate-in fade-in zoom-in-95 duration-300">
+              <StaffLogin onLogin={onStaffLogin} onBack={() => setActiveTab("student")} />
+            </div>
+          )}
+          
+          <div className="mt-12 text-center">
+            <p className="text-[11px] text-slate-400 font-medium">Cookies notice</p>
           </div>
+          
         </div>
-
-        {/* Feature: Trusted Badge */}
-        <div className="mt-8 flex justify-center pb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-300">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-200">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trusted by 500+ SSCET Students</span>
-          </div>
-        </div>
-
       </div>
     </div>
   );

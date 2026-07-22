@@ -38,6 +38,10 @@ export interface LeetCodeStats {
   weeklyProgress?: number;
   monthlyProgress?: number;
   weeklyChartData?: { name: string; solved: number }[];
+  acceptanceRate?: number | string;
+  totalEasy?: number;
+  totalMedium?: number;
+  totalHard?: number;
 }
 
 export interface Question {
