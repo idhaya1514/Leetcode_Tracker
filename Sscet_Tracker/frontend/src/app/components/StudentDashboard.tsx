@@ -181,10 +181,10 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         
-        {/* Left Column: Tasks & Data */}
-        <div className="xl:col-span-2 space-y-6">
+        {/* Main Content Area */}
+        <div className="space-y-6">
           
           {/* Today's Tasks Table */}
           <div className={`${PREMIUM_CARD}`}>
@@ -335,126 +335,7 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
           </div>
         </div>
 
-        {/* Right Column: Profile & Notifications */}
-        <div className="space-y-6">
-          
-          {/* LeetCode Performance */}
-          <div className={`${PREMIUM_CARD}`}>
-            <div className="p-6 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Code2 className="w-5 h-5 text-orange-500" /> LeetCode Performance
-              </h3>
-            </div>
-            <div className="p-6">
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full border-4 border-slate-50 overflow-hidden shadow-sm">
-                  <img src={leetStats?.avatar || "https://assets.leetcode.com/users/default_avatar.png"} alt="Avatar" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800">{leetStats?.realName || student.name}</h4>
-                  <p className="text-sm text-slate-500">@{leetStats?.username || student.leetCodeUsername}</p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="text-xs text-slate-500 mb-1">Global Ranking</div>
-                  <div className="font-bold text-slate-800">#{leetStats?.ranking?.toLocaleString() || 'N/A'}</div>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div className="text-xs text-slate-500 mb-1">Acceptance Rate</div>
-                  <div className="font-bold text-slate-800">{leetStats?.acceptanceRate || '65.4'}%</div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-emerald-600 font-medium">Easy</span>
-                    <span className="text-slate-600 font-medium">{easySolved} <span className="text-slate-400">/ {leetStats?.totalEasy || 700}</span></span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${Math.min((easySolved / (leetStats?.totalEasy || 700)) * 100, 100)}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-amber-500 font-medium">Medium</span>
-                    <span className="text-slate-600 font-medium">{mediumSolved} <span className="text-slate-400">/ {leetStats?.totalMedium || 1500}</span></span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-amber-400 h-2 rounded-full" style={{ width: `${Math.min((mediumSolved / (leetStats?.totalMedium || 1500)) * 100, 100)}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-rose-500 font-medium">Hard</span>
-                    <span className="text-slate-600 font-medium">{hardSolved} <span className="text-slate-400">/ {leetStats?.totalHard || 600}</span></span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div className="bg-rose-500 h-2 rounded-full" style={{ width: `${Math.min((hardSolved / (leetStats?.totalHard || 600)) * 100, 100)}%` }}></div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 pt-6 border-t border-slate-100">
-                <div className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wider">Submission Heatmap (Simulated)</div>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: 60 }).map((_, i) => (
-                    <div key={i} className={`w-3 h-3 rounded-sm ${Math.random() > 0.7 ? 'bg-emerald-400' : Math.random() > 0.4 ? 'bg-emerald-200' : 'bg-slate-100'}`}></div>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Recent Activity Timeline */}
-          <div className={`${PREMIUM_CARD}`}>
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-indigo-500" /> Notifications
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="relative pl-6 border-l-2 border-slate-100 space-y-6">
-                
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-blue-100 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                  </div>
-                  <div className="text-sm font-medium text-slate-800">New Task Assigned</div>
-                  <div className="text-xs text-slate-500 mt-1">Faculty assigned "Two Sum" for today.</div>
-                  <div className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> 2 hours ago</div>
-                </div>
-                
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-emerald-100 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                  </div>
-                  <div className="text-sm font-medium text-slate-800">Daily Target Achieved 🏆</div>
-                  <div className="text-xs text-slate-500 mt-1">Congratulations! You solved 5 problems today.</div>
-                  <div className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Yesterday</div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-amber-100 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-                  </div>
-                  <div className="text-sm font-medium text-slate-800">Deadline Approaching</div>
-                  <div className="text-xs text-slate-500 mt-1">"Merge Intervals" is due in 3 hours.</div>
-                  <div className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> 2 days ago</div>
-                </div>
-
-              </div>
-              <button className="w-full mt-6 py-2 bg-slate-50 text-blue-600 text-sm font-medium rounded-lg hover:bg-slate-100 transition-colors">
-                View All Activity
-              </button>
-            </div>
-          </div>
-          
-        </div>
       </div>
       
       {/* Footer */}

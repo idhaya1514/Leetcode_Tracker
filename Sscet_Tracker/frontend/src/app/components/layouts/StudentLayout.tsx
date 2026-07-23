@@ -9,7 +9,7 @@ export default function StudentLayout({ onLogout, student }: { onLogout: () => v
   const navItems = [
     { label: 'Dashboard', path: '/student', icon: LayoutDashboard },
     { label: 'Today\'s Tasks', path: '/student/tasks', icon: CheckSquare },
-    { label: 'LeetCode Progress', path: '/student/leetcode', icon: Code2 },
+
     { label: 'Daily Target', path: '/student/tracker', icon: Target },
     { label: 'Performance', path: '/student/performance', icon: BarChart3 },
     { label: 'Reports', path: '/student/reports', icon: FileText },

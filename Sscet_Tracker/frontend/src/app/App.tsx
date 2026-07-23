@@ -21,6 +21,8 @@ const StaffReports = lazy(() => import("./components/StaffReports"));
 const StaffNotifications = lazy(() => import("./components/StaffNotifications"));
 const StaffProfile = lazy(() => import("./components/StaffProfile"));
 const StaffSettings = lazy(() => import("./components/StaffSettings"));
+const StudentProfile = lazy(() => import("./components/StudentProfile"));
+const StudentSettings = lazy(() => import("./components/StudentSettings"));
 
 const AdminSettings = lazy(() => import("./components/AdminSettings"));
 const AdminLayout = lazy(() => import("./components/layouts/AdminLayout"));
@@ -190,8 +192,8 @@ export default function App() {
             <Route path="performance" element={<div className="p-8 text-slate-500">Performance (Coming Soon)</div>} />
             <Route path="reports" element={<div className="p-8 text-slate-500">Reports (Coming Soon)</div>} />
             <Route path="notifications" element={<div className="p-8 text-slate-500">Notifications (Coming Soon)</div>} />
-            <Route path="profile" element={<div className="p-8 text-slate-500">Profile (Coming Soon)</div>} />
-            <Route path="settings" element={<div className="p-8 text-slate-500">Settings (Coming Soon)</div>} />
+            <Route path="profile" element={<StudentProfile student={student!} onBack={() => {}} />} />
+            <Route path="settings" element={<StudentSettings />} />
           </Route>
 
           {/* Fallback */}

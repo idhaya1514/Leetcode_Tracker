@@ -66,7 +66,7 @@ export default function StaffLogin({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!staffName.trim() || !department || !staffId.trim() || !password) {
+    if (!staffName.trim() || !department || !staffId.trim() || !email.trim() || !password) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -78,7 +78,7 @@ export default function StaffLogin({
         name: staffName,
         id: staffId,
         department: department,
-        email: "staff@college.edu"
+        email: email.trim()
       });
     } catch (err) {
       setError("Server connection error.");
@@ -333,6 +333,10 @@ export default function StaffLogin({
 
         <Field label="Staff ID" icon={IdCard}>
           <input type="text" value={staffId} onChange={(e) => setStaffId(e.target.value)} className={inputCls} placeholder="e.g. STF-001" />
+        </Field>
+
+        <Field label="Email Address" icon={Mail}>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="Enter your email id" />
         </Field>
         
         <Field label="Password" icon={Lock}>
