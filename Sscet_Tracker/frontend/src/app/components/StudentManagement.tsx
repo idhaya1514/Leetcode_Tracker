@@ -142,7 +142,7 @@ export default function StudentManagement() {
     return students.filter(s => {
       const matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.registerNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const matchYear = filterYear === "All" || s.academicYear === filterYear;
-      const shortDept = filterDept === "All" ? "All" : (filterDept.split("(")[1]?.replace(")","") || filterDept);
+      const shortDept = filterDept === "All" ? "All" : (filterDept.split("(")[1]?.replace(")","").replace("&", "") || filterDept);
       const matchDept = filterDept === "All" || s.department === shortDept;
       return matchSearch && matchYear && matchDept;
     });

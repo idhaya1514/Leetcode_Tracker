@@ -18,7 +18,7 @@ interface StudentPerformanceProps {
 }
 
 const DEPT_SHORT: Record<string, string> = {
-  "Artificial Intelligence and Data Science (AI&DS)": "AI&DS",
+  "Artificial Intelligence and Data Science (AI&DS)": "AIDS",
   "Computer Science and Engineering (CSE)": "CSE",
   "Cyber Security (CS)": "CS",
   "Information Technology (IT)": "IT",
@@ -63,7 +63,8 @@ export default function StudentPerformance({ onBack }: StudentPerformanceProps) 
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
-      if (selectedDept !== "All" && s.department !== selectedDept) return false;
+      const shortSelected = selectedDept === "All" ? "All" : (DEPT_SHORT[selectedDept] || selectedDept);
+      if (selectedDept !== "All" && s.department !== shortSelected) return false;
       if (selectedYear !== "All" && s.academicYear !== selectedYear) return false;
       return true;
     });
@@ -77,10 +78,11 @@ export default function StudentPerformance({ onBack }: StudentPerformanceProps) 
   const deptRegistrationData = useMemo(() => {
     const deptsToMap = selectedDept === "All" ? DEPARTMENTS : [selectedDept];
     return deptsToMap.map(dept => {
-      const deptStudents = filteredStudents.filter(s => s.department === dept);
+      const shortDept = DEPT_SHORT[dept] || dept;
+      const deptStudents = filteredStudents.filter(s => s.department === shortDept);
       const linked = deptStudents.filter(s => s.leetCodeUsername).length;
       return {
-        name: DEPT_SHORT[dept] || dept,
+        name: shortDept,
         total: deptStudents.length,
         linked: linked,
         unlinked: deptStudents.length - linked,
