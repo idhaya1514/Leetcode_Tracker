@@ -274,9 +274,9 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
           <div className="w-16 h-1 bg-amber-400 rounded-full mb-6"></div>
           
           <p className="text-slate-300 text-[15px] leading-relaxed mb-8">
-            Your learning journey starts here.<br/>
-            Access courses, connect with peers,<br/>
-            and achieve your goals.
+            Your coding journey starts here.<br/>
+            Track LeetCode progress, compete with peers,<br/>
+            and achieve your coding goals.
           </p>
 
           <div className="space-y-4">
@@ -287,7 +287,7 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
             <div className="w-full h-[1px] bg-slate-700/50"></div>
             <div className="flex items-start gap-4">
               <GraduationCap className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-slate-300 text-sm font-medium">Empowering students and faculty through quality education</p>
+              <p className="text-slate-300 text-sm font-medium">Empowering students and faculty through competitive programming</p>
             </div>
           </div>
         </div>
@@ -300,7 +300,7 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
           
           <div className="mb-8">
             <h2 className="text-[28px] font-bold text-slate-800 mb-1 tracking-tight">Welcome back</h2>
-            <p className="text-slate-500 text-sm">Log in to SSCET Learning Management System</p>
+            <p className="text-slate-500 text-sm">Log in to SSCET LeetCode Tracker</p>
           </div>
 
           {/* Tab Switcher */}
