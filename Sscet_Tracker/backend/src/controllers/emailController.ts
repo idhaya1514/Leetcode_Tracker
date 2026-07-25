@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../index';
+import { prisma } from '../prisma';
 import { sendReminderEmail, sendCongratulationEmail } from '../services/emailService';
 
 /**
@@ -25,8 +25,7 @@ const getTasksAndCategorizeStudents = async () => {
         include: {
           student: true,
         }
-      },
-      submissions: true
+      }
     }
   });
 
@@ -38,12 +37,10 @@ const getTasksAndCategorizeStudents = async () => {
       const student = assignment.student;
       if (!student.email) continue; // Skip if no email
 
-      const submission = task.submissions.find(sub => sub.studentId === student.id);
-      
-      const isCompleted = submission && (submission.status === 'SUBMITTED' || submission.status === 'GRADED');
+      const isCompleted = assignment.status === 'COMPLETED';
 
       if (isCompleted) {
-        completed.push({ student, task, submission });
+        completed.push({ student, task, completedAt: assignment.completedAt });
       } else {
         incomplete.push({ student, task });
       }
@@ -85,7 +82,7 @@ export const processCongratulations = async () => {
       item.student.email,
       item.student.name,
       item.task.title,
-      item.submission.submittedAt
+      item.completedAt || new Date()
     );
     
     if (result.success) successCount++;

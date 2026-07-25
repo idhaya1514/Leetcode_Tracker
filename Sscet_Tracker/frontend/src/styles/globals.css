@@ -1,3 +1,109 @@
+@theme {
+  --color-sapphire-900: #19385e;
+  --color-sapphire-800: #3d5979;
+  --color-sapphire-700: #1f3146;
+  --color-sapphire-600: #263545;
+  --color-sapphire-500: #1c2833;
+  --color-sapphire-400: #6278a0;
+  --color-sapphire-300: #8097ba;
+  --color-sapphire-200: #a8bcd1;
+  --color-sapphire-100: #cddae6;
+  --color-sapphire-50: #eaf1e0;
+
+  --color-gold-950: #dba934;
+  --color-gold-900: #da9d24;
+  --color-gold-800: #d89f03;
+  --color-gold-700: #e4bc2d;
+  --color-gold-600: #b39022;
+  --color-gold-500: #d3a717;
+  --color-gold-400: #d4b440;
+  --color-gold-300: #e2c96a;
+  --color-gold-200: #eedc9e;
+  --color-gold-100: #f8f0cc;
+  --color-gold-50: #fdf8e8;
+
+  --color-cream-100: #fdfaf2;
+  --color-cream-200: #f8f3e4;
+  --color-cream-300: #f1e9d0;
+  --color-cream-400: #e6d9b4;
+  --color-cream-500: #d4c490;
+
+  --color-ink-900: #0f0e0c;
+  --color-ink-800: #1c1a16;
+  --color-ink-700: #2e2b24;
+  --color-ink-600: #3f3b32;
+  --color-ink-500: #54503f;
+
+  --color-stone-400: #7a7264;
+  --color-stone-300: #a09588;
+  --color-stone-200: #c4bcb0;
+  --color-stone-100: #e2ddd6;
+
+  --shadow-xs: 0 2px 8px rgba(15,14,12,.06);
+  --shadow-sm: 0 4px 16px rgba(15,14,12,.08);
+  --shadow-md: 0 8px 32px rgba(15,14,12,.1);
+  --shadow-lg: 0 16px 56px rgba(15,14,12,.13);
+  --shadow-gold: 0 8px 40px rgba(197,160,40,.28);
+  --shadow-blue: 0 8px 40px rgba(74,96,122,.3);
+}
+
+:root {
+  /* Primary - Sapphire */
+  --sapphire-900: #19385e;
+  --sapphire-800: #3d5979;
+  --sapphire-700: #1f3146;
+  --sapphire-600: #263545;
+  --sapphire-500: #1c2833;
+  --sapphire-400: #6278a0;
+  --sapphire-300: #8097ba;
+  --sapphire-200: #a8bcd1;
+  --sapphire-100: #cddae6;
+  --sapphire-50: #eaf1e0;
+
+  /* Accent - Gold */
+  --gold-950: #dba934;
+  --gold-900: #da9d24;
+  --gold-800: #d89f03;
+  --gold-700: #e4bc2d;
+  --gold-600: #b39022;
+  --gold-500: #d3a717;
+  --gold-400: #d4b440;
+  --gold-300: #e2c96a;
+  --gold-200: #eedc9e;
+  --gold-100: #f8f0cc;
+  --gold-50: #fdf8e8;
+
+  /* Background - Cream */
+  --cream-100: #fdfaf2;
+  --cream-200: #f8f3e4;
+  --cream-300: #f1e9d0;
+  --cream-400: #e6d9b4;
+  --cream-500: #d4c490;
+
+  /* Text - Ink */
+  --ink-900: #0f0e0c;
+  --ink-800: #1c1a16;
+  --ink-700: #2e2b24;
+  --ink-600: #3f3b32;
+  --ink-500: #54503f;
+
+  /* Neutral - Stone */
+  --stone-400: #7a7264;
+  --stone-300: #a09588;
+  --stone-200: #c4bcb0;
+  --stone-100: #e2ddd6;
+
+  --font-display: 'Jost', sans-serif;
+  --font-body: 'Jost', sans-serif;
+
+  --shadow-xs: 0 2px 8px rgba(15,14,12,.06);
+  --shadow-sm: 0 4px 16px rgba(15,14,12,.08);
+  --shadow-md: 0 8px 32px rgba(15,14,12,.1);
+  --shadow-lg: 0 16px 56px rgba(15,14,12,.13);
+  --shadow-gold: 0 8px 40px rgba(197,160,40,.28);
+  --shadow-blue: 0 8px 40px rgba(74,96,122,.3);
+}
+
 /* ─── Global Base ─────────────────────────────────────────────────────────── */
 *,
 *::before,
@@ -13,9 +119,9 @@ html {
 }
 
 body {
-  background: #f8fafc;
-  color: #1e293b;
-  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  background: var(--cream-100);
+  color: var(--ink-900);
+  font-family: var(--font-body);
   min-height: 100vh;
   letter-spacing: -0.01em;
 }
@@ -27,27 +133,27 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Outfit", "Inter", system-ui, sans-serif;
+  font-family: var(--font-display);
   letter-spacing: -0.025em;
 }
 
 button,
 [role="button"] {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
 }
 
 label,
 th,
 caption {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-body);
   letter-spacing: 0.01em;
 }
 
 input,
 textarea,
 select {
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-body);
 }
 
 /* ─── Custom Scrollbar ────────────────────────────────────────────────────── */
@@ -390,40 +496,64 @@ table {
   }
 }
 
-/* ─── Global Light Form and Text Elements Override ─────────────────────────────────── */
-input,
-textarea,
-select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
-}
-label {
-  color: #475569 !important; /* slate-600 */
+/* ─── Premium UI Effects (Wow Factor) ─────────────────────────────────── */
+.bg-mesh {
+  background-color: var(--color-cream-100);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(205, 218, 230, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(248, 240, 204, 0.5) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(168, 188, 209, 0.3) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(226, 201, 106, 0.2) 0px, transparent 50%);
 }
 
-/* Table rows */
-tr {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+.glass-panel {
+  background: rgba(253, 250, 242, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 40px rgba(25, 56, 94, 0.08);
 }
-th {
-  background-color: #f1f5f9 !important;
-  color: #475569 !important;
+
+.glow-accent {
+  position: relative;
 }
-td {
-  color: #334155 !important;
+.glow-accent::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, var(--color-sapphire-600), var(--color-gold-400), var(--color-sapphire-400));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  filter: blur(8px);
 }
-/* Fix option elements for select dropdowns */
-option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+.glow-accent:hover::before, .glow-accent:focus-within::before {
+  opacity: 0.6;
 }
-.table-row-hover:hover {
-  background: rgba(99, 102, 241, 0.05) !important;
+
+.animate-stagger > * {
+  opacity: 0;
+  animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-stagger > *:nth-child(1) { animation-delay: 100ms; }
+.animate-stagger > *:nth-child(2) { animation-delay: 200ms; }
+.animate-stagger > *:nth-child(3) { animation-delay: 300ms; }
+.animate-stagger > *:nth-child(4) { animation-delay: 400ms; }
+.animate-stagger > *:nth-child(5) { animation-delay: 500ms; }
+.animate-stagger > *:nth-child(6) { animation-delay: 600ms; }
+.animate-stagger > *:nth-child(7) { animation-delay: 700ms; }
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }

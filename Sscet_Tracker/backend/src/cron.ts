@@ -24,6 +24,34 @@ export function startCronJobs() {
           if (!res.ok) continue;
           
           const data = await res.json();
+
+          // Log the daily snapshot
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+          await prisma.leetCodeDailyProgress.upsert({
+            where: {
+              studentId_date: {
+                studentId: student.id,
+                date: today
+              }
+            },
+            update: {
+              totalSolved: data.totalSolved || 0,
+              easySolved: data.easySolved || 0,
+              mediumSolved: data.mediumSolved || 0,
+              hardSolved: data.hardSolved || 0
+            },
+            create: {
+              studentId: student.id,
+              date: today,
+              totalSolved: data.totalSolved || 0,
+              easySolved: data.easySolved || 0,
+              mediumSolved: data.mediumSolved || 0,
+              hardSolved: data.hardSolved || 0
+            }
+          });
+
           // The API doesn't always provide "last active" easily, so a better check in real-world 
           // is fetching the recent submissions
           const subRes = await fetch(`https://leetcode-api-faisalshohag.vercel.app/${student.leetCodeProfile.username}/submission`);

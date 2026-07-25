@@ -22,9 +22,9 @@ export default function StudentLayout({ onLogout, student }: { onLogout: () => v
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar role="Student" navItems={navItems} onLogout={() => { onLogout(); navigate('/'); }} />
       <div className="flex-1 ml-64 flex flex-col h-screen">
-        <Topbar userRole="Student" userName={student?.name} onLogout={() => { onLogout(); navigate('/'); }} />
+        <Topbar userRole="Student" userName={student?.name} userDetails={student} onLogout={() => { onLogout(); navigate('/'); }} />
         <main className="flex-1 overflow-y-auto p-6 animate-in fade-in duration-500">
-          <Outlet />
+          <Outlet context={{ student }} />
         </main>
       </div>
     </div>

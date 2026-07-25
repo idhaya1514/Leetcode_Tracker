@@ -1,4 +1,4 @@
-import { prisma } from '../src/index';
+import { prisma } from '../src/prisma';
 import bcrypt from 'bcrypt';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';

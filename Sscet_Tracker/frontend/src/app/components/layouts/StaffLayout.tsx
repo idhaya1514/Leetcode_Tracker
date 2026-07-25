@@ -26,9 +26,9 @@ export default function StaffLayout({ onLogout, staff }: { onLogout: () => void,
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      <Sidebar role="Staff" navItems={navItems} onLogout={() => { onLogout(); navigate('/'); }} />
+      <Sidebar role="Staff" navItems={navItems} onLogout={onLogout} />
       <div className="flex-1 ml-64 flex flex-col h-screen">
-        <Topbar userRole={staff?.name || "Staff Member"} onLogout={() => { onLogout(); navigate('/'); }} />
+        <Topbar userRole="Staff" userName={staff?.name} userDetails={staff} onLogout={onLogout} />
         <main className="flex-1 overflow-y-auto p-6 animate-in fade-in duration-500">
           <Outlet context={{ staff }} />
         </main>

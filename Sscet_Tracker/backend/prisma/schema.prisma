@@ -95,8 +95,8 @@ model Student {
 
   // Relationships
   leetCodeProfile    LeetCodeProfile?
-  assignments        StudentAssignment[]
-  taskSubmissions    TaskSubmission[]
+  leetCodeDailyProgress LeetCodeDailyProgress[]
+  taskAssignments    TaskAssignment[]
   attendanceRecords  Attendance[]
   staffAssignments   StaffStudentAssignment[]
 }
@@ -169,7 +169,8 @@ model Task {
   description     String?
   // Fields for "PROBLEM" type
   difficulty      String?  // Easy, Medium, Hard
-  leetcodeProblem String?  // Problem number or title
+  leetcodeUrl     String?  // Exact LeetCode URL
+  leetcodeProblem String?  // Problem title or slug
   topic           String?  // Arrays, Strings, etc.
   // Fields for "TARGET" type
   targetEasy      Int?     @default(0)
@@ -177,35 +178,31 @@ model Task {
   targetHard      Int?     @default(0)
   
   dueDate         DateTime?
-  createdBy       String?  // Staff ID
+  createdByRole   String?  // ADMIN or STAFF
+  createdById     String?  // Admin ID or Staff ID
+  createdByName   String?  // Name of the assigner
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  submissions     TaskSubmission[]
-  assignments     StudentAssignment[]
+  assignments     TaskAssignment[]
 }
 
-model StudentAssignment {
-  id         String   @id @default(uuid())
-  studentId  String
-  taskId     String
-  assignedAt DateTime @default(now())
+model TaskAssignment {
+  id                    String   @id @default(uuid())
+  studentRegisterNumber String
+  taskId                String
+  
+  status                String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, OVERDUE
+  score                 Float?
+  feedback              String?
+  
+  assignedAt            DateTime @default(now())
+  completedAt           DateTime?
 
-  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  task       Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
-}
+  student               Student  @relation(fields: [studentRegisterNumber], references: [registerNumber], onDelete: Cascade)
+  task                  Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-model TaskSubmission {
-  id          String   @id @default(uuid())
-  studentId   String
-  taskId      String
-  status      String   @default("PENDING") // PENDING, SUBMITTED, GRADED
-  score       Float?
-  feedback    String?
-  submittedAt DateTime @default(now())
-
-  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  task        Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  @@unique([taskId, studentRegisterNumber])
 }
 
 // --- Attendance ---
@@ -283,4 +280,22 @@ model Settings {
   key         String   @unique
   value       String
   updatedAt   DateTime @updatedAt
+}
+
+// --- LeetCode Daily Progress ---
+model LeetCodeDailyProgress {
+  id              String   @id @default(uuid())
+  studentId       String
+  date            DateTime @db.Date
+  
+  totalSolved     Int      @default(0)
+  easySolved      Int      @default(0)
+  mediumSolved    Int      @default(0)
+  hardSolved      Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, date])
 }

@@ -6,21 +6,17 @@ import multer from 'multer';
 import * as xlsx from 'xlsx';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
+import { prisma } from './prisma';
 import ws from 'ws';
 import emailRoutes from './routes/emailRoutes';
+import dashboardOverviewRouter from './routes/dashboard-overview';
+import analyticsRouter from './routes/analytics';
+import staffRouter from './routes/staff';
 import { initializeCronJobs } from './services/cronService';
-
-neonConfig.webSocketConstructor = ws;
 
 dotenv.config();
 
 const app = express();
-
-const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
-export const prisma = new PrismaClient({ adapter });
-
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -30,6 +26,15 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // --- Email Routes ---
 app.use('/api/email', emailRoutes);
+
+// --- Dashboard Routes ---
+app.use('/api/dashboard', dashboardOverviewRouter);
+
+// --- Analytics Routes ---
+app.use('/api/analytics', analyticsRouter);
+
+// --- Staff Routes ---
+app.use('/api/staff', staffRouter);
 
 // --- Initialize Cron Jobs ---
 initializeCronJobs();
@@ -58,7 +63,10 @@ app.post('/api/auth/login', async (req, res) => {
         department = user.department?.name || user.department?.code;
       }
     }
-    else if (role === 'staff') user = await prisma.staff.findUnique({ where: { email } });
+    else if (role === 'staff') user = await prisma.staff.findUnique({ 
+      where: { email },
+      include: { department: true } 
+    });
     else if (role === 'admin') user = await prisma.admin.findUnique({ where: { email } });
 
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -78,8 +86,9 @@ app.post('/api/auth/login', async (req, res) => {
         name: user.name, 
         role,
         registerNumber: (user as any).registerNumber,
-        department,
-        leetCodeUsername
+        department: (user as any).department?.name || (user as any).department?.code || department,
+        leetCodeUsername,
+        staffId: (user as any).staffId
       } 
     });
   } catch (error) {
@@ -289,8 +298,8 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         const deptName = row['Department']?.toString().trim();
         const yearName = row['Academic Year']?.toString().trim();
 
-        if (!email || !registerNumber || !name) {
-          failedCount++; errors.push({ row, error: 'Missing required fields' }); continue;
+        if (!registerNumber || !name) {
+          failedCount++; errors.push({ row, error: 'Missing required fields (Register Number, Student Name)' }); continue;
         }
 
         let dept = deptName ? await prisma.department.upsert({ where: { code: deptName.substring(0,5).toUpperCase() }, update: {}, create: { code: deptName.substring(0,5).toUpperCase(), name: deptName } }) : null;
@@ -428,6 +437,22 @@ app.post('/api/staff/assign', async (req, res) => {
   }
 });
 
+app.get('/api/staff/assignment_history', async (req, res) => {
+  // Mock history as there is no schema support yet
+  res.json([]);
+});
+
+app.delete('/api/staff/assignments/:registerNumber', async (req, res) => {
+  try {
+    await prisma.staffStudentAssignment.deleteMany({
+      where: { studentRegisterNumber: req.params.registerNumber }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to remove assignment' });
+  }
+});
+
 // --- Tasks ---
 app.post('/api/tasks', async (req, res) => {
   try {
@@ -436,13 +461,16 @@ app.post('/api/tasks', async (req, res) => {
       title, 
       description, 
       difficulty, 
+      leetcodeUrl,
       leetcodeProblem, 
       topic, 
       targetEasy, 
       targetMedium, 
       targetHard, 
       dueDate, 
-      createdBy, 
+      createdByRole,
+      createdById,
+      createdByName,
       studentIds 
     } = req.body;
     
@@ -453,29 +481,33 @@ app.post('/api/tasks', async (req, res) => {
         title, 
         description, 
         difficulty, 
+        leetcodeUrl,
         leetcodeProblem, 
         topic, 
         targetEasy: targetEasy ? Number(targetEasy) : 0,
         targetMedium: targetMedium ? Number(targetMedium) : 0,
         targetHard: targetHard ? Number(targetHard) : 0,
-        dueDate: new Date(dueDate), 
-        createdBy 
+        dueDate: dueDate ? new Date(dueDate) : null, 
+        createdByRole,
+        createdById,
+        createdByName
       }
     });
     
     // Assign to students
     if (studentIds && Array.isArray(studentIds)) {
-      const assignments = studentIds.map(studentId => ({
-        studentId,
-        taskId: task.id
+      const assignments = studentIds.map((studentRegisterNumber: string) => ({
+        studentRegisterNumber,
+        taskId: task.id,
+        status: "PENDING"
       }));
-      await prisma.studentAssignment.createMany({ data: assignments });
+      await prisma.taskAssignment.createMany({ data: assignments });
     }
     
     res.json(task);
-  } catch (err) {
+  } catch (err: any) {
     console.error("Create task error:", err);
-    res.status(500).json({ error: 'Failed to create task' });
+    res.status(500).json({ error: 'Failed to create task: ' + err.message });
   }
 });
 
@@ -484,14 +516,96 @@ app.get('/api/tasks', async (req, res) => {
     const tasks = await prisma.task.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        assignments: true,
-        submissions: true
+        assignments: {
+          include: { student: true }
+        }
       }
     });
     res.json(tasks);
   } catch (err) {
     console.error("Get tasks error:", err);
     res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+app.get('/api/tasks/student/:registerNumber', async (req, res) => {
+  try {
+    const { registerNumber } = req.params;
+    const assignments = await prisma.taskAssignment.findMany({
+      where: { studentRegisterNumber: registerNumber },
+      include: { task: true },
+      orderBy: { assignedAt: 'desc' }
+    });
+    res.json(assignments);
+  } catch (err) {
+    console.error("Get student tasks error:", err);
+    res.status(500).json({ error: 'Failed to fetch student tasks' });
+  }
+});
+
+app.get('/api/tasks/staff/:staffId', async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const tasks = await prisma.task.findMany({
+      where: { createdById: staffId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        assignments: {
+          include: { student: true }
+        }
+      }
+    });
+    res.json(tasks);
+  } catch (err) {
+    console.error("Get staff tasks error:", err);
+    res.status(500).json({ error: 'Failed to fetch staff tasks' });
+  }
+});
+
+app.put('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, difficulty, leetcodeUrl, leetcodeProblem, topic, targetEasy, targetMedium, targetHard, dueDate } = req.body;
+    
+    const task = await prisma.task.update({
+      where: { id },
+      data: {
+        title, description, difficulty, leetcodeUrl, leetcodeProblem, topic, 
+        targetEasy: targetEasy ? Number(targetEasy) : 0,
+        targetMedium: targetMedium ? Number(targetMedium) : 0,
+        targetHard: targetHard ? Number(targetHard) : 0,
+        dueDate: dueDate ? new Date(dueDate) : null,
+      }
+    });
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.task.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+import { syncLeetCodeTasks } from './services/leetcodeSync';
+
+app.post('/api/tasks/sync/:registerNumber', async (req, res) => {
+  try {
+    const { registerNumber } = req.params;
+    const result = await syncLeetCodeTasks(registerNumber);
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json({ error: result.message });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to sync tasks' });
   }
 });
 
@@ -505,10 +619,7 @@ app.get('/api/student/dashboard/:registerNumber', async (req, res) => {
         department: true,
         academicYear: true,
         leetCodeProfile: true,
-        taskSubmissions: {
-          include: { task: true }
-        },
-        assignments: {
+        taskAssignments: {
           include: { task: true }
         },
         attendanceRecords: true
@@ -519,7 +630,24 @@ app.get('/api/student/dashboard/:registerNumber', async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    res.json(student);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const history = await prisma.leetCodeDailyProgress.findMany({
+      where: {
+        studentId: student.id,
+        date: { in: [yesterday, today] }
+      }
+    });
+
+    res.json({
+      ...student,
+      dailyProgressHistory: history
+    });
   } catch (err) {
     console.error("Dashboard error:", err);
     res.status(500).json({ error: 'Failed to fetch dashboard data' });
@@ -540,7 +668,70 @@ app.put('/api/student/profile/:registerNumber', async (req, res) => {
   }
 });
 
+// --- Notifications & Messaging ---
+
+app.post('/api/notifications', async (req, res) => {
+  try {
+    const { userId, title, message } = req.body;
+    if (!userId || !title || !message) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const notif = await prisma.notification.create({
+      data: { userId, title, message, isRead: false }
+    });
+    res.json(notif);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create notification' });
+  }
+});
+
+app.get('/api/notifications/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const notifs = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(notifs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+app.put('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notif = await prisma.notification.update({
+      where: { id },
+      data: { isRead: true }
+    });
+    res.json(notif);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update notification' });
+  }
+});
+
+app.get('/api/students/:registerNumber/staff', async (req, res) => {
+  try {
+    const { registerNumber } = req.params;
+    const assignment = await prisma.staffStudentAssignment.findFirst({
+      where: { studentRegisterNumber: registerNumber },
+      include: { staff: true }
+    });
+    if (!assignment) {
+      return res.status(404).json({ error: 'No staff assigned' });
+    }
+    res.json(assignment.staff);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch assigned staff' });
+  }
+});
+
 // Start background cron jobs
 startCronJobs();
 
 app.listen(PORT, () => console.log("Backend API running on http://localhost:" + PORT));
+
+// Trigger restart

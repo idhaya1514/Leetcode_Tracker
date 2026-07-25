@@ -91,7 +91,10 @@ export interface ExamResult {
 async function handleResponse(response: Response) {
   const contentType = response.headers.get("content-type");
   if (!contentType || !contentType.includes("application/json")) {
-    throw new Error("Response is not JSON");
+    const error = new Error("Response is not JSON");
+    (error as any).isHttpError = true;
+    (error as any).status = response.status;
+    throw error;
   }
   if (!response.ok) {
     let errorMessage = `HTTP ${response.status}`;
@@ -101,7 +104,10 @@ async function handleResponse(response: Response) {
     } catch {
       // ignore
     }
-    throw new Error(errorMessage);
+    const error = new Error(errorMessage);
+    (error as any).isHttpError = true;
+    (error as any).status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -209,7 +215,10 @@ async function run<T>(
     const res = await expressCall();
     return await handleResponse(res);
   } catch (e: any) {
-    console.warn("Express API failed, falling back to local storage:", e.message);
+    if (e.isHttpError) {
+      throw e; // Do not fallback if backend responded with an error
+    }
+    console.warn("Express API network error, falling back to local storage:", e.message);
     try {
       // Fallback to local storage
       return localCall();
@@ -234,14 +243,32 @@ export async function getStudents(forceRefresh = false): Promise<Student[]> {
   }
   
   try {
-    const res = await fetch('http://localhost:3000/api/students');
-    if (!res.ok) throw new Error('Failed to fetch');
-    cachedStudents = await res.json();
+    const data = await run(
+      async () => {
+        const { data, error } = await supabase!.from("students").select("*");
+        if (error) throw error;
+        return data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          registerNumber: d.register_number,
+          email: d.email,
+          password: d.password,
+          department: d.department,
+          academicYear: d.academic_year,
+          leetCodeUrl: d.leetcode_url,
+          leetCodeUsername: d.leet_code_username,
+          createdAt: d.created_at,
+        }));
+      },
+      () => fetch(`${API_BASE_URL}/students`),
+      () => lsStudents()
+    );
+    cachedStudents = data;
     lastStudentsFetchTime = now;
-    return cachedStudents || [];
+    return data || [];
   } catch (err) {
-    console.error('PostgreSQL API getStudents Error:', err);
-    if (cachedStudents) return cachedStudents; // return stale cache if error
+    console.error('getStudents Error:', err);
+    if (cachedStudents) return cachedStudents;
     return [];
   }
 }
@@ -348,7 +375,22 @@ export async function loginStudent(registerNumber: string, password?: string): P
     }
     return { success: false, error: json.error || 'Login failed' };
   } catch (error: any) {
-    return { success: false, error: error.message };
+    console.warn("Express API failed, falling back to local storage:", error.message);
+    try {
+      const all = lsStudents();
+      const s = all.find(
+        (st) =>
+          st.registerNumber.toLowerCase() === registerNumber.trim().toLowerCase() ||
+          (st.email || "").toLowerCase() === registerNumber.trim().toLowerCase()
+      );
+      if (!s) throw new Error("Invalid credentials.");
+      if (s.password && password && s.password !== password) {
+        throw new Error("Invalid credentials.");
+      }
+      return { success: true, data: s };
+    } catch (localError: any) {
+      return { success: false, error: localError.message };
+    }
   }
 }
 
@@ -677,6 +719,25 @@ export async function deleteAllStudents(): Promise<{ message: string }> {
       return { message: "All students deleted successfully" };
     },
   );
+}
+
+export async function importStudents(file: File): Promise<{ message: string, summary: any, errors: any[] }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/import/students`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Import failed");
+    }
+    return await res.json();
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to upload file");
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -1954,6 +2015,18 @@ export async function getStaffs(forceRefresh = false): Promise<any[]> {
 let cachedAssignments: StaffStudentAssignment[] | null = null;
 let lastAssignmentsFetchTime = 0;
 
+export async function getStaffDashboardMetrics(staffId: string) {
+  const res = await fetch(`${API_BASE_URL}/staff/dashboard/${staffId}`);
+  if (!res.ok) throw new Error("Failed to fetch dashboard metrics");
+  return await res.json();
+}
+
+export async function getStaffStudentsDetails(staffId: string) {
+  const res = await fetch(`${API_BASE_URL}/staff/students/${staffId}`);
+  if (!res.ok) throw new Error("Failed to fetch student details");
+  return await res.json();
+}
+
 export async function getStaffAssignments(forceRefresh = false): Promise<StaffStudentAssignment[]> {
   const now = Date.now();
   if (!forceRefresh && cachedAssignments && (now - lastAssignmentsFetchTime < CACHE_TTL)) {
@@ -2001,7 +2074,12 @@ export async function assignStudentsToStaff(
     () => fetch(`${API_BASE_URL}/staff/assign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ staffId, registerNumbers, adminName })
+      body: JSON.stringify({ staffId, studentRegisterNumbers: registerNumbers, adminName })
+    }).then(async res => {
+      // Invalidate caches
+      cachedAssignments = null;
+      cachedHistory = null;
+      return res;
     }),
     () => {
       const assignments = lsStaffAssignments();
@@ -2048,7 +2126,11 @@ export async function removeStudentAssignment(
 ): Promise<{ success: boolean }> {
   return run(
     async () => { throw new Error("Supabase implementation not ready"); },
-    () => fetch(`${API_BASE_URL}/staff/assignments/${registerNumber}`, { method: "DELETE" }),
+    () => fetch(`${API_BASE_URL}/staff/assignments/${registerNumber}`, { method: "DELETE" }).then(async res => {
+      cachedAssignments = null;
+      cachedHistory = null;
+      return res;
+    }),
     () => {
       const assignments = lsStaffAssignments();
       const history = lsAssignmentsHistory();
@@ -2078,3 +2160,193 @@ export async function removeStudentAssignment(
     }
   );
 }
+
+// --------------------------------------------------------------------------------
+//  NOTIFICATIONS & MESSAGING API
+// --------------------------------------------------------------------------------
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export async function sendNotification(userId: string, title: string, message: string): Promise<AppNotification> {
+  return run(
+    async () => {
+      const { data, error } = await supabase!.from("Notification").insert({ userId, title, message }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    () => fetch(`${API_BASE_URL}/notifications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, title, message })
+    }),
+    () => {
+      const all = lsGet<AppNotification[]>("exam_portal_notifications", []);
+      const n: AppNotification = { id: Date.now().toString(), userId, title, message, isRead: false, createdAt: new Date().toISOString() };
+      all.push(n);
+      lsSet("exam_portal_notifications", all);
+      return n;
+    }
+  );
+}
+
+export async function getDashboardOverview(): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/dashboard/overview`);
+    if (!res.ok) throw new Error("Failed to fetch dashboard overview");
+    return await res.json();
+  } catch (e: any) {
+    console.error("Dashboard overview error:", e.message);
+    throw e;
+  }
+}
+
+export async function getAnalytics(department: string, year: string, section: string = 'All'): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/analytics?department=${encodeURIComponent(department)}&year=${encodeURIComponent(year)}&section=${encodeURIComponent(section)}`);
+    if (!res.ok) throw new Error("Failed to fetch analytics");
+    return await res.json();
+  } catch (e: any) {
+    console.error("Analytics fetch error:", e.message);
+    throw e;
+  }
+}
+
+export async function getNotifications(userId: string): Promise<AppNotification[]> {
+  try {
+    let backendData: AppNotification[] = [];
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase!.from("Notification").select("*").eq("userId", userId).order("createdAt", { ascending: false });
+      if (error) throw error;
+      backendData = data;
+    } else {
+      const res = await fetch(`${API_BASE_URL}/notifications/${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch from backend");
+      backendData = await res.json();
+    }
+    
+    // Merge with local storage in case some were created while offline
+    const allLs = lsGet<AppNotification[]>("exam_portal_notifications", []);
+    const lsNotifs = allLs.filter(n => n.userId === userId);
+    const merged = [...backendData];
+    const backendIds = new Set(backendData.map((n: any) => n.id));
+    for (const n of lsNotifs) {
+      if (!backendIds.has(n.id)) {
+        merged.push(n);
+      }
+    }
+    return merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (e: any) {
+    console.warn("API failed, falling back to local storage:", e.message);
+    const allLs = lsGet<AppNotification[]>("exam_portal_notifications", []);
+    return allLs.filter(n => n.userId === userId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  return run(
+    async () => {
+      const { error } = await supabase!.from("Notification").update({ isRead: true }).eq("id", id);
+      if (error) throw error;
+    },
+    () => fetch(`${API_BASE_URL}/notifications/${id}/read`, { method: "PUT" }),
+    () => {
+      const all = lsGet<AppNotification[]>("exam_portal_notifications", []);
+      const idx = all.findIndex(n => n.id === id);
+      if (idx !== -1) {
+        all[idx].isRead = true;
+        lsSet("exam_portal_notifications", all);
+      }
+    }
+  );
+}
+
+export async function getAssignedStaffForStudent(registerNumber: string): Promise<any> {
+  return run(
+    async () => {
+      const { data, error } = await supabase!.from("StaffStudentAssignment").select("staff(*)").eq("studentRegisterNumber", registerNumber).single();
+      if (error || !data) return null;
+      return data.staff;
+    },
+    () => fetch(`${API_BASE_URL}/students/${registerNumber}/staff`),
+    () => {
+      const assignments = lsStaffAssignments();
+      const a = assignments.find(x => x.studentRegisterNumber === registerNumber);
+      if (!a) return null;
+      const staffList = lsGet<any[]>("sscet_staff", []);
+      return staffList.find(s => s.staffId === a.staffId) || null;
+    }
+  );
+}
+
+// --- Tasks ---
+
+export interface TaskAssignmentData {
+  id: string;
+  studentRegisterNumber: string;
+  taskId: string;
+  status: string;
+  assignedAt: string;
+  completedAt?: string;
+  task: any;
+  student?: any;
+}
+
+export async function getStudentTasks(registerNumber: string): Promise<TaskAssignmentData[]> {
+  const res = await fetch(`${API_BASE_URL}/tasks/student/${registerNumber}`);
+  if (!res.ok) throw new Error("Failed to fetch student tasks");
+  return res.json();
+}
+
+export async function getStaffTasks(staffId: string): Promise<any[]> {
+  const res = await fetch(`${API_BASE_URL}/tasks/staff/${staffId}`);
+  if (!res.ok) throw new Error("Failed to fetch staff tasks");
+  return res.json();
+}
+
+export async function getAllTasks(): Promise<any[]> {
+  const res = await fetch(`${API_BASE_URL}/tasks`);
+  if (!res.ok) throw new Error("Failed to fetch tasks");
+  return res.json();
+}
+
+export async function createTask(taskData: any): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/tasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(taskData)
+  });
+  if (!res.ok) throw new Error("Failed to create task");
+  return res.json();
+}
+
+export async function updateTask(taskId: string, taskData: any): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(taskData)
+  });
+  if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/tasks/${taskId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete task");
+}
+
+export async function syncLeetCodeTaskProgress(registerNumber: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/tasks/sync/${registerNumber}`, { method: "POST" });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to sync tasks");
+  }
+  return res.json();
+}
+
