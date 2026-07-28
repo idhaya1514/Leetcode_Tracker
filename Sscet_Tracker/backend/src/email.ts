@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { prisma } from './index';
+import { prisma } from './prisma';
 
 // Create a reusable transporter using dynamic DB settings or ENV fallback
 async function getTransporter() {

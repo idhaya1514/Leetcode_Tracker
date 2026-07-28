@@ -24,6 +24,7 @@ export function Sidebar({ role, navItems, onLogout }: { role: string; navItems: 
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.path === '/admin' || item.path === '/staff' || item.path === '/student'}
             className={({ isActive }) => 
               `flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-sapphire-800 to-sapphire-900/50 text-gold-500 border-l-4 border-gold-500 rounded-r-lg shadow-sm' : 'hover:bg-sapphire-800 hover:text-cream-100 text-sapphire-100 rounded-lg'}`
             }

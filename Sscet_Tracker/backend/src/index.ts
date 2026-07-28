@@ -51,10 +51,10 @@ app.post('/api/auth/login', async (req, res) => {
     let user = null;
     let leetCodeUsername = undefined;
     let department = undefined;
-    
+
     if (role === 'student') {
       // Find by email or registerNumber
-      user = await prisma.student.findFirst({ 
+      user = await prisma.student.findFirst({
         where: { OR: [{ email }, { registerNumber: email }] },
         include: { department: true, leetCodeProfile: true }
       });
@@ -63,9 +63,9 @@ app.post('/api/auth/login', async (req, res) => {
         department = user.department?.name || user.department?.code;
       }
     }
-    else if (role === 'staff') user = await prisma.staff.findUnique({ 
+    else if (role === 'staff') user = await prisma.staff.findUnique({
       where: { email },
-      include: { department: true } 
+      include: { department: true }
     });
     else if (role === 'admin') user = await prisma.admin.findUnique({ where: { email } });
 
@@ -73,23 +73,23 @@ app.post('/api/auth/login', async (req, res) => {
 
     // For demonstration if passwords aren't hashed in the DB yet, we can do a direct check or bcrypt check
     const isValid = user.password && (user.password === password || await bcrypt.compare(password, user.password).catch(() => false));
-    
+
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = jwt.sign({ id: user.id, role }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
-    
-    res.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        name: user.name, 
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
         role,
         registerNumber: (user as any).registerNumber,
         department: (user as any).department?.name || (user as any).department?.code || department,
         leetCodeUsername,
         staffId: (user as any).staffId
-      } 
+      }
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error during login' });
@@ -106,7 +106,7 @@ app.get('/api/students/:id', async (req, res) => {
       include: { department: true, academicYear: true, leetCodeProfile: true }
     });
     if (!student) return res.status(404).json({ error: 'Student not found' });
-    
+
     res.json({
       id: student.id,
       name: student.name,
@@ -192,9 +192,9 @@ app.post('/api/students/sync-leetcode', async (req, res) => {
 app.post('/api/students', async (req, res) => {
   try {
     const { name, registerNumber, department, academicYear, email, password, leetCodeUrl, leetCodeUsername } = req.body;
-    
+
     // Find or create relations
-    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0,5).toUpperCase() }, update: {}, create: { code: department.substring(0,5).toUpperCase(), name: department } }) : null;
+    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0, 5).toUpperCase() }, update: {}, create: { code: department.substring(0, 5).toUpperCase(), name: department } }) : null;
     let year = academicYear ? await prisma.academicYear.upsert({ where: { year: academicYear }, update: {}, create: { year: academicYear } }) : null;
 
     const student = await prisma.student.create({
@@ -249,7 +249,7 @@ app.put('/api/students/:id', async (req, res) => {
     const { id } = req.params;
     const { name, department, academicYear, email, leetCodeUrl, leetCodeUsername } = req.body;
 
-    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0,5).toUpperCase() }, update: {}, create: { code: department.substring(0,5).toUpperCase(), name: department } }) : null;
+    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0, 5).toUpperCase() }, update: {}, create: { code: department.substring(0, 5).toUpperCase(), name: department } }) : null;
     let year = academicYear ? await prisma.academicYear.upsert({ where: { year: academicYear }, update: {}, create: { year: academicYear } }) : null;
 
     const student = await prisma.student.update({
@@ -302,7 +302,7 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
           failedCount++; errors.push({ row, error: 'Missing required fields (Register Number, Student Name)' }); continue;
         }
 
-        let dept = deptName ? await prisma.department.upsert({ where: { code: deptName.substring(0,5).toUpperCase() }, update: {}, create: { code: deptName.substring(0,5).toUpperCase(), name: deptName } }) : null;
+        let dept = deptName ? await prisma.department.upsert({ where: { code: deptName.substring(0, 5).toUpperCase() }, update: {}, create: { code: deptName.substring(0, 5).toUpperCase(), name: deptName } }) : null;
         let year = yearName ? await prisma.academicYear.upsert({ where: { year: yearName }, update: {}, create: { year: yearName } }) : null;
 
         await prisma.student.upsert({
@@ -361,10 +361,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     // Look up the user
     const student = await prisma.student.findUnique({ where: { email } });
     if (!student) return res.status(404).json({ error: 'User not found' });
-    
+
     // Generate a 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     // In a real app, store OTP in DB with an expiration time.
     await prisma.passwordResetOTP.create({
       data: { email, otp, expiresAt: new Date(Date.now() + 5 * 60000) }
@@ -403,8 +403,8 @@ app.get('/api/staff/assignments', async (req, res) => {
 app.post('/api/staff/create', async (req, res) => {
   try {
     const { staffId, name, email, department, password } = req.body;
-    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0,5).toUpperCase() }, update: {}, create: { code: department.substring(0,5).toUpperCase(), name: department } }) : null;
-    
+    let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0, 5).toUpperCase() }, update: {}, create: { code: department.substring(0, 5).toUpperCase(), name: department } }) : null;
+
     const staff = await prisma.staff.create({
       data: { staffId, name, email, password, departmentId: dept?.id }
     });
@@ -420,7 +420,7 @@ app.post('/api/staff/assign', async (req, res) => {
     if (!staffId || !Array.isArray(studentRegisterNumbers)) {
       return res.status(400).json({ error: 'Invalid payload' });
     }
-    
+
     const promises = studentRegisterNumbers.map(regNo => {
       return prisma.staffStudentAssignment.upsert({
         where: {
@@ -456,44 +456,44 @@ app.delete('/api/staff/assignments/:registerNumber', async (req, res) => {
 // --- Tasks ---
 app.post('/api/tasks', async (req, res) => {
   try {
-    const { 
-      taskType = "PROBLEM", 
-      title, 
-      description, 
-      difficulty, 
+    const {
+      taskType = "PROBLEM",
+      title,
+      description,
+      difficulty,
       leetcodeUrl,
-      leetcodeProblem, 
-      topic, 
-      targetEasy, 
-      targetMedium, 
-      targetHard, 
-      dueDate, 
+      leetcodeProblem,
+      topic,
+      targetEasy,
+      targetMedium,
+      targetHard,
+      dueDate,
       createdByRole,
       createdById,
       createdByName,
-      studentIds 
+      studentIds
     } = req.body;
-    
+
     // Create the task
     const task = await prisma.task.create({
-      data: { 
+      data: {
         taskType,
-        title, 
-        description, 
-        difficulty, 
+        title,
+        description,
+        difficulty,
         leetcodeUrl,
-        leetcodeProblem, 
-        topic, 
+        leetcodeProblem,
+        topic,
         targetEasy: targetEasy ? Number(targetEasy) : 0,
         targetMedium: targetMedium ? Number(targetMedium) : 0,
         targetHard: targetHard ? Number(targetHard) : 0,
-        dueDate: dueDate ? new Date(dueDate) : null, 
+        dueDate: dueDate ? new Date(dueDate) : null,
         createdByRole,
         createdById,
         createdByName
       }
     });
-    
+
     // Assign to students
     if (studentIds && Array.isArray(studentIds)) {
       const assignments = studentIds.map((studentRegisterNumber: string) => ({
@@ -503,7 +503,7 @@ app.post('/api/tasks', async (req, res) => {
       }));
       await prisma.taskAssignment.createMany({ data: assignments });
     }
-    
+
     res.json(task);
   } catch (err: any) {
     console.error("Create task error:", err);
@@ -566,11 +566,11 @@ app.put('/api/tasks/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, difficulty, leetcodeUrl, leetcodeProblem, topic, targetEasy, targetMedium, targetHard, dueDate } = req.body;
-    
+
     const task = await prisma.task.update({
       where: { id },
       data: {
-        title, description, difficulty, leetcodeUrl, leetcodeProblem, topic, 
+        title, description, difficulty, leetcodeUrl, leetcodeProblem, topic,
         targetEasy: targetEasy ? Number(targetEasy) : 0,
         targetMedium: targetMedium ? Number(targetMedium) : 0,
         targetHard: targetHard ? Number(targetHard) : 0,
