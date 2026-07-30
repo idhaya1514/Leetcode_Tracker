@@ -263,7 +263,7 @@ export default function LoginPage({ onStudentLogin, onAdminLogin, onStaffLogin }
           </h1>
           
           <p className="text-slate-300/90 text-lg leading-relaxed mb-12 font-medium">
-            Your coding journey starts here. Track your LeetCode progress, compete with peers, and achieve your coding goals at SSCET.
+            Your coding journey starts here. Track your LeetCode program progress, compete with peers, and achieve your coding goals at SSCET.
           </p>
 
           <div className="space-y-8">
