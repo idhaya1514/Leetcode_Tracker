@@ -385,7 +385,7 @@ export async function loginStudent(registerNumber: string, password?: string): P
       );
       if (!s) throw new Error("Invalid credentials.");
       if (s.password && password && s.password !== password) {
-        throw new Error("Invalid credentials.");
+        throw new Error("Invalid credentials (local storage).");
       }
       return { success: true, data: s };
     } catch (localError: any) {
@@ -398,7 +398,7 @@ export async function requestPasswordResetOTP(email: string, role: "student" | "
   if (!email) throw new Error("Email is required");
   const normalizedEmail = email.trim().toLowerCase();
 
-  const res = await fetch("/api/auth/forgot-password", {
+  const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: normalizedEmail, role })
@@ -1918,8 +1918,6 @@ export async function seedDefaultQuestions(): Promise<Question[]> {
     return allInserted;
   }
 
-  // LocalStorage Fallback
-  lsSet("exam_portal_questions", defaultQuestions);
   return defaultQuestions;
 }
 

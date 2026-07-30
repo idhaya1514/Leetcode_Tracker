@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Calendar, Target, Trophy, Activity, CheckCircle2, XCircle, TrendingUp } from "lucide-react";
+import { FileText, Download, Calendar, Target, Trophy, Activity, CheckCircle2, XCircle, TrendingUp, Loader2 } from "lucide-react";
 import { useOutletContext } from "react-router";
-import { fetchStudentDashboardData } from "../../services/api";
+import { fetchStudentDashboardData, fetchLeetCodeStats, LeetCodeStats } from "../../services/api";
 import { toast } from "sonner";
 
 export default function StudentReports() {
   const { student } = useOutletContext<{ student: any }>();
   const [data, setData] = useState<any>(null);
+  const [liveStats, setLiveStats] = useState<LeetCodeStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (student?.registerNumber) {
@@ -20,6 +22,11 @@ export default function StudentReports() {
     try {
       const dbData = await fetchStudentDashboardData(student.registerNumber);
       setData(dbData);
+      
+      if (dbData.leetCodeProfile?.username) {
+        const stats = await fetchLeetCodeStats(dbData.leetCodeProfile.username, true);
+        setLiveStats(stats);
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to load report data");
     } finally {
@@ -35,7 +42,7 @@ export default function StudentReports() {
     return <div className="p-8 text-center text-stone-500">No report data available.</div>;
   }
 
-  const leetStats = data.leetCodeProfile || {};
+  const leetStats = liveStats || data.leetCodeProfile || {};
   const totalDays = data.attendanceRecords?.length || 0;
   const presentDays = data.attendanceRecords?.filter((r: any) => r.status === "PRESENT").length || 0;
   const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 100;
@@ -45,8 +52,69 @@ export default function StudentReports() {
   const overdueTasks = tasks.filter((t: any) => t.status === "OVERDUE").length;
   const pendingTasks = tasks.filter((t: any) => t.status === "PENDING").length;
 
+  const generatePDF = async () => {
+    const element = document.getElementById("report-content");
+    if (!element) return;
+    
+    setIsGenerating(true);
+    const toastId = toast.loading("Generating PDF...");
+    
+    try {
+      // Dynamically import to avoid bloat on initial load
+      const domToImageModule = await import("dom-to-image-more");
+      const domToImage = domToImageModule.default || (domToImageModule as any);
+      
+      const jsPdfModule = await import("jspdf");
+      const jsPDF = jsPdfModule.default || jsPdfModule.jsPDF || (jsPdfModule as any);
+      
+      // Temporarily hide the button during capture by using a CSS class
+      element.classList.add("pdf-exporting");
+      
+      // We use dom-to-image-more because html2canvas crashes on modern CSS colors like oklch/oklab
+      const imgData = await domToImage.toPng(element, { 
+        bgcolor: "#ffffff",
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left"
+        }
+      });
+      
+      element.classList.remove("pdf-exporting");
+      
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Calculate original element dimensions
+      const rect = element.getBoundingClientRect();
+      const pdfHeight = (rect.height * pdfWidth) / rect.width;
+      
+      let heightLeft = pdfHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pdf.internal.pageSize.getHeight();
+      
+      // Handle multiple pages if report is too long
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pdf.internal.pageSize.getHeight();
+      }
+      
+      pdf.save(`Report_${student.registerNumber}.pdf`);
+      toast.success("PDF downloaded successfully!", { id: toastId });
+    } catch (error: any) {
+      console.error("PDF Gen Error:", error);
+      toast.error(`Failed to generate PDF: ${error.message || "Unknown error"}`, { id: toastId });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 pb-12">
+    <div id="report-content" className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 pb-12 bg-stone-50/50 p-2 md:p-8 rounded-3xl">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-black text-ink-900 tracking-tight flex items-center gap-2">
@@ -55,11 +123,12 @@ export default function StudentReports() {
           <p className="text-stone-500 text-sm mt-1">Comprehensive overview of your activities, tasks, and coding progress.</p>
         </div>
         <button 
-          onClick={() => window.print()}
-          className="flex items-center gap-2 bg-white border border-stone-200 hover:bg-stone-50 text-ink-900 px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm print:hidden"
+          onClick={generatePDF}
+          disabled={isGenerating}
+          className="flex items-center gap-2 bg-white border border-stone-200 hover:bg-stone-50 text-ink-900 px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm print:hidden disabled:opacity-50"
         >
-          <Download className="w-4 h-4" />
-          Export PDF
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {isGenerating ? "Exporting..." : "Export PDF"}
         </button>
       </div>
 
