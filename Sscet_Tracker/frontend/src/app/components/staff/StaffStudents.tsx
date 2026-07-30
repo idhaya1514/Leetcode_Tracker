@@ -39,7 +39,7 @@ export default function StaffStudents() {
     <div className="max-w-[1400px] mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">My Students</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">My Student</h1>
           <p className="text-slate-500 text-sm mt-1">Detailed view of all students assigned to you.</p>
         </div>
       </div>
