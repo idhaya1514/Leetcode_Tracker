@@ -1,0 +1,13 @@
+name: Production CD Pipeline
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Trigger Server Local Deployment Script
+        run: ~/deploy.sh
