@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CheckSquare, Calendar, Target, Plus, Search, Trash2, Tag, Hash, AlignLeft, AlertCircle, Loader2, BarChart2, Upload } from "lucide-react";
 import * as XLSX from "xlsx";
-import { API_BASE_URL, getStudents, getStaffAssignments } from "../../services/api";
+import { API_BASE_URL, getStudents, getStaffAssignments, deleteTask } from "../../services/api";
 import { toast } from "sonner";
 
 export default function StaffTasks() {
@@ -185,6 +185,18 @@ export default function StaffTasks() {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    
+    try {
+      await deleteTask(taskId);
+      toast.success("Task deleted successfully!");
+      fetchTasks();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete task.");
+    }
+  };
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -618,7 +630,7 @@ export default function StaffTasks() {
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button 
-                        onClick={() => {}}
+                        onClick={() => handleDeleteTask(task.id)}
                         className="p-1.5 text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
                         title="Delete Task"
                       >
