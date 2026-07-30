@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { BarChart3, Calendar, Target, Trophy, Filter, Activity, Clock, Zap } from "lucide-react";
 import { useOutletContext } from "react-router";
-import { fetchStudentDashboardData } from "../../services/api";
+import { fetchStudentDashboardData, fetchLeetCodeStats, LeetCodeStats } from "../../services/api";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function StudentDailyProgress() {
   const { student } = useOutletContext<{ student: any }>();
   const [data, setData] = useState<any>(null);
+  const [liveStats, setLiveStats] = useState<LeetCodeStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("Today");
 
@@ -30,6 +31,11 @@ export default function StudentDailyProgress() {
     try {
       const dbData = await fetchStudentDashboardData(student.registerNumber);
       setData(dbData);
+      
+      if (dbData.leetCodeProfile?.username) {
+        const stats = await fetchLeetCodeStats(dbData.leetCodeProfile.username, true);
+        setLiveStats(stats);
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to load progress data");
     } finally {
@@ -92,6 +98,14 @@ export default function StudentDailyProgress() {
         fEasy = 0; fMedium = 0; fHard = 0; fTotal = 0; 
       }
     }
+    
+    // Override fTotal with live stats if available for better accuracy
+    if (liveStats && liveStats.solvedToday !== undefined) {
+      fTotal = liveStats.solvedToday;
+      if (fEasy + fMedium + fHard === 0 && fTotal > 0) {
+         fEasy = fTotal; // Fallback to easy if we can't determine breakdown for today
+      }
+    }
   } else {
     // For other days, just fallback to mockup for now until we have more history
     const factor = daysToCalculate === 1 ? 0 : daysToCalculate === 7 ? 0.15 : daysToCalculate === 30 ? 0.4 : 1;
@@ -99,6 +113,13 @@ export default function StudentDailyProgress() {
     fMedium = Math.max(0, Math.round((leetStats.mediumSolved || 0) * factor));
     fHard = Math.max(0, Math.round((leetStats.hardSolved || 0) * factor));
     fTotal = fEasy + fMedium + fHard;
+    
+    if (daysToCalculate === 1 && liveStats?.solvedToday !== undefined) {
+      fTotal = liveStats.solvedToday;
+      if (fEasy + fMedium + fHard === 0 && fTotal > 0) fEasy = fTotal;
+    }
+    if (daysToCalculate === 7 && liveStats?.weeklyProgress !== undefined) fTotal = liveStats.weeklyProgress;
+    if (daysToCalculate === 30 && liveStats?.monthlyProgress !== undefined) fTotal = liveStats.monthlyProgress;
   }
   
   const completionPercentage = fTotal > 0 ? Math.min(100, Math.round((fTotal / (daysToCalculate * 2)) * 100)) : 0;

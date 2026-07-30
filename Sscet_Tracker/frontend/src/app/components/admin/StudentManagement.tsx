@@ -194,7 +194,7 @@ export default function StudentManagement() {
             onClick={async () => {
               try {
                 toast.loading("Syncing LeetCode stats...", { id: "sync" });
-                const res = await fetch("http://localhost:3000/api/students/sync-leetcode", { method: "POST" });
+                const res = await fetch("/api/students/sync-leetcode", { method: "POST" });
                 const data = await res.json();
                 toast.success(`Synced ${data.synced} students!`, { id: "sync" });
                 loadStudents();

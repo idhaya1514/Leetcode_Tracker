@@ -1,4 +1,4 @@
-import { prisma } from '../index';
+import { prisma } from '../prisma';
 
 export async function syncLeetCodeTasks(registerNumber: string) {
   try {
@@ -41,9 +41,30 @@ export async function syncLeetCodeTasks(registerNumber: string) {
     let newlyCompleted = 0;
 
     for (const assignment of student.taskAssignments) {
-      const taskSlug = assignment.task.leetcodeProblem;
+      let matched = false;
       
-      if (taskSlug && solvedSlugs.has(taskSlug)) {
+      // 1. Check if leetcodeProblem happens to be the slug (legacy)
+      if (assignment.task.leetcodeProblem && solvedSlugs.has(assignment.task.leetcodeProblem)) {
+        matched = true;
+      }
+      
+      // 2. Extract slug from leetcodeUrl
+      if (!matched && assignment.task.leetcodeUrl) {
+        const match = assignment.task.leetcodeUrl.match(/leetcode\.com\/problems\/([^/]+)/);
+        if (match && solvedSlugs.has(match[1])) {
+          matched = true;
+        }
+      }
+      
+      // 3. Fallback: generate slug from title
+      if (!matched && assignment.task.title) {
+        const generatedSlug = assignment.task.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        if (solvedSlugs.has(generatedSlug)) {
+          matched = true;
+        }
+      }
+
+      if (matched) {
         await prisma.taskAssignment.update({
           where: { id: assignment.id },
           data: {

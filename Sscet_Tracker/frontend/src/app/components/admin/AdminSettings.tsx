@@ -18,7 +18,7 @@ export default function AdminSettings() {
   const [autoPurgeDays, setAutoPurgeDays] = useState("90");
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/settings")
+    fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
         if (data.require2FA) setRequire2FA(data.require2FA === "true");
@@ -36,7 +36,7 @@ export default function AdminSettings() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/settings", {
+      const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
