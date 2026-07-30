@@ -188,7 +188,6 @@ export default function StaffTasks() {
 
   const handleDeleteTask = async (taskId: string) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
-    
     try {
       await deleteTask(taskId);
       toast.success("Task deleted successfully!");
@@ -631,7 +630,7 @@ export default function StaffTasks() {
                     <td className="px-5 py-4 text-right">
                       <button 
                         onClick={() => handleDeleteTask(task.id)}
-                        className="p-1.5 text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors"
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100 rounded-md transition-colors shadow-sm bg-rose-50 border border-rose-100"
                         title="Delete Task"
                       >
                         <Trash2 className="w-4 h-4" />
