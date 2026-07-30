@@ -1918,8 +1918,6 @@ export async function seedDefaultQuestions(): Promise<Question[]> {
     return allInserted;
   }
 
-  // LocalStorage Fallback
-  lsSet("exam_portal_questions", defaultQuestions);
   return defaultQuestions;
 }
 
