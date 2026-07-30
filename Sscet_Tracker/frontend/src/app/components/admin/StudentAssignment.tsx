@@ -203,7 +203,8 @@ export default function StudentAssignment() {
     return students.filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             s.registerNumber.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesDept = departmentFilter === "All" || s.department === departmentFilter;
+      const shortDept = departmentFilter === "All" ? "All" : (departmentFilter.split("(")[1]?.replace(")","").replace("&", "") || departmentFilter);
+      const matchesDept = departmentFilter === "All" || s.department === shortDept || s.department === departmentFilter;
       const matchesYear = yearFilter === "All" || (s as any).academicYear === yearFilter; // Type hack for potential year mismatch
       
       const assignment = assignments.find(a => a.studentRegisterNumber === s.registerNumber);

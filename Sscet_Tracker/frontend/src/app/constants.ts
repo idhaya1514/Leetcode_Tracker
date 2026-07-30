@@ -1,18 +1,17 @@
 export const DEPARTMENTS = [
-  "Artificial Intelligence and Data Science (AI&DS)",
-  "Computer Science and Engineering (CSE)",
-  "Cyber Security (CS)",
-  "Information Technology (IT)",
-  "Biomedical Engineering (BME)",
-  "Electrical and Electronics Engineering (EEE)",
-  "Electronics and Communication Engineering (ECE)",
-  "Mechanical Engineering (MECH)",
-  "Agricultural Engineering (AGRI)",
+  "ARTIFICIAL INTELLIGENCE",
+  "COMPUTER SCIENCE",
+  "INFORMATION TECHNOLOGY",
+  "CYBER SECURITY",
+  "AGRICULTURE",
+  "MECHANICAL",
+  "ELECTRONICS AND COMMUNICATION ENGINEERING",
+  "BIO MEDICAL ENGINEERING"
 ];
 
 export const ACADEMIC_YEARS = [
-  "I",
-  "II",
-  "III",
-  "IV"
+  "1st year",
+  "2nd year",
+  "3rd year",
+  "4th year"
 ];

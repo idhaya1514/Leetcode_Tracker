@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 export default function StaffTasks() {
   const [tasks, setTasks] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -570,7 +571,13 @@ export default function StaffTasks() {
           </h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-            <input type="text" placeholder="Search tasks..." className="pl-9 pr-4 py-1.5 bg-cream-100 border border-stone-200 rounded-lg text-sm focus:border-sapphire-600 outline-none" />
+            <input 
+              type="text" 
+              placeholder="Search tasks..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-1.5 bg-cream-100 border border-stone-200 rounded-lg text-sm focus:border-sapphire-600 outline-none" 
+            />
           </div>
         </div>
         
@@ -590,7 +597,7 @@ export default function StaffTasks() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
-                {tasks.map((task) => (
+                {tasks.filter(t => !searchQuery || t.title?.toLowerCase().includes(searchQuery.toLowerCase()) || t.taskType?.toLowerCase().includes(searchQuery.toLowerCase()) || t.topic?.toLowerCase().includes(searchQuery.toLowerCase()) || t.difficulty?.toLowerCase().includes(searchQuery.toLowerCase())).map((task) => (
                   <tr key={task.id} className="hover:bg-cream-200/50 transition-colors">
                     <td className="px-5 py-4">
                       {task.taskType === "TARGET" ? (

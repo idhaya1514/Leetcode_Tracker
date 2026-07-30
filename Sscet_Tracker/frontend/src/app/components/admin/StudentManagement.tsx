@@ -60,6 +60,36 @@ export default function StudentManagement() {
     }
   }, [formData.leetCodeUrl]);
 
+  useEffect(() => {
+    if (!formData.registerNumber) return;
+    const reg = formData.registerNumber.toUpperCase();
+    let newYear = formData.academicYear;
+    let newDept = formData.department;
+    let changed = false;
+
+    if (reg.includes("E23")) { newYear = "4th year"; changed = true; }
+    else if (reg.includes("E24")) { newYear = "3rd year"; changed = true; }
+    else if (reg.includes("E25")) { newYear = "2nd year"; changed = true; }
+    else if (reg.includes("E26")) { newYear = "1st year"; changed = true; }
+
+    if (reg.includes("AI")) { newDept = "ARTIFICIAL INTELLIGENCE"; changed = true; }
+    else if (reg.includes("CS")) { newDept = "COMPUTER SCIENCE"; changed = true; }
+    else if (reg.includes("IT")) { newDept = "INFORMATION TECHNOLOGY"; changed = true; }
+    else if (reg.includes("CY")) { newDept = "CYBER SECURITY"; changed = true; }
+    else if (reg.includes("AG")) { newDept = "AGRICULTURE"; changed = true; }
+    else if (reg.includes("ME")) { newDept = "MECHANICAL"; changed = true; }
+    else if (reg.includes("EC")) { newDept = "ELECTRONICS AND COMMUNICATION ENGINEERING"; changed = true; }
+    else if (reg.includes("BME")) { newDept = "BIO MEDICAL ENGINEERING"; changed = true; }
+
+    if (changed) {
+      setFormData(p => {
+        if (p.academicYear === newYear && p.department === newDept) return p;
+        return { ...p, academicYear: newYear, department: newDept };
+      });
+    }
+  }, [formData.registerNumber]);
+
+
   const loadStudents = async () => {
     setIsLoading(true);
     try {
@@ -174,8 +204,7 @@ export default function StudentManagement() {
     return students.filter(s => {
       const matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.registerNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const matchYear = filterYear === "All" || s.academicYear === filterYear;
-      const shortDept = filterDept === "All" ? "All" : (filterDept.split("(")[1]?.replace(")","").replace("&", "") || filterDept);
-      const matchDept = filterDept === "All" || s.department === shortDept;
+      const matchDept = filterDept === "All" || s.department === filterDept;
       return matchSearch && matchYear && matchDept;
     });
   }, [students, searchTerm, filterYear, filterDept]);

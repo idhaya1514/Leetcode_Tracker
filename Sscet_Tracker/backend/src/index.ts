@@ -295,8 +295,28 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         const email = row['Email']?.toString().toLowerCase().trim();
         const registerNumber = row['Register Number']?.toString().trim();
         const name = row['Student Name']?.toString().trim();
-        const deptName = row['Department']?.toString().trim();
-        const yearName = row['Academic Year']?.toString().trim();
+        let deptName = row['Department']?.toString().trim();
+        let yearName = row['Academic Year']?.toString().trim();
+
+        if (registerNumber) {
+          const reg = registerNumber.toUpperCase();
+          if (!yearName) {
+            if (reg.includes("E23")) yearName = "4th year";
+            else if (reg.includes("E24")) yearName = "3rd year";
+            else if (reg.includes("E25")) yearName = "2nd year";
+            else if (reg.includes("E26")) yearName = "1st year";
+          }
+          if (!deptName) {
+            if (reg.includes("AI")) deptName = "ARTIFICIAL INTELLIGENCE";
+            else if (reg.includes("CS")) deptName = "COMPUTER SCIENCE";
+            else if (reg.includes("IT")) deptName = "INFORMATION TECHNOLOGY";
+            else if (reg.includes("CY")) deptName = "CYBER SECURITY";
+            else if (reg.includes("AG")) deptName = "AGRICULTURE";
+            else if (reg.includes("ME")) deptName = "MECHANICAL";
+            else if (reg.includes("EC")) deptName = "ELECTRONICS AND COMMUNICATION ENGINEERING";
+            else if (reg.includes("BME")) deptName = "BIO MEDICAL ENGINEERING";
+          }
+        }
 
         if (!registerNumber || !name) {
           failedCount++; errors.push({ row, error: 'Missing required fields (Register Number, Student Name)' }); continue;
