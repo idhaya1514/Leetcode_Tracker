@@ -364,7 +364,7 @@ export function getLeetCodeProfileUrl(
 
 export async function loginStudent(registerNumber: string, password?: string): Promise<{ success: boolean; data?: Student; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: registerNumber, password, role: 'student' })
@@ -398,7 +398,7 @@ export async function requestPasswordResetOTP(email: string, role: "student" | "
   if (!email) throw new Error("Email is required");
   const normalizedEmail = email.trim().toLowerCase();
 
-  const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+  const res = await fetch("http://localhost:3000/api/auth/forgot-password", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: normalizedEmail, role })

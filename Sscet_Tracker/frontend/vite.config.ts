@@ -32,7 +32,7 @@ export default defineConfig({
     // proxy (nginx / caddy) to do the same.
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:3000" ,
         changeOrigin: true,
         secure: false,
       },
