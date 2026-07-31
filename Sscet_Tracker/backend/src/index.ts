@@ -298,23 +298,46 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         let deptName = row['Department']?.toString().trim();
         let yearName = row['Academic Year']?.toString().trim();
 
-        if (registerNumber) {
-          const reg = registerNumber.toUpperCase();
-          if (!yearName) {
-            if (reg.includes("E23")) yearName = "4th year";
-            else if (reg.includes("E24")) yearName = "3rd year";
-            else if (reg.includes("E25")) yearName = "2nd year";
-            else if (reg.includes("E26")) yearName = "1st year";
+        if (!deptName || !yearName) {
+          let parsedDeptCode = null;
+          let parsedYearCode = null;
+          
+          const match = registerNumber ? registerNumber.match(/^(E\d{2})([A-Z]+)\d*$/i) : null;
+          if (match) {
+            parsedYearCode = match[1].toUpperCase();
+            parsedDeptCode = match[2].toUpperCase();
           }
+
           if (!deptName) {
-            if (reg.includes("AI")) deptName = "ARTIFICIAL INTELLIGENCE";
-            else if (reg.includes("CS")) deptName = "COMPUTER SCIENCE";
-            else if (reg.includes("IT")) deptName = "INFORMATION TECHNOLOGY";
-            else if (reg.includes("CY")) deptName = "CYBER SECURITY";
-            else if (reg.includes("AG")) deptName = "AGRICULTURE";
-            else if (reg.includes("ME")) deptName = "MECHANICAL";
-            else if (reg.includes("EC")) deptName = "ELECTRONICS AND COMMUNICATION ENGINEERING";
-            else if (reg.includes("BME")) deptName = "BIO MEDICAL ENGINEERING";
+            if (parsedDeptCode) {
+              const deptMap: Record<string, string> = {
+                'CS': 'Computer Science and Engineering',
+                'IT': 'Information Technology',
+                'AI': 'Artificial Intelligence and Data Science',
+                'CY': 'Cyber Security',
+                'EC': 'Electronics and Communication Engineering',
+                'BM': 'Biomedical Engineering',
+                'ME': 'Mechanical Engineering',
+                'AG': 'Agricultural Engineering'
+              };
+              deptName = deptMap[parsedDeptCode] || 'Others';
+            } else {
+              deptName = 'Others';
+            }
+          }
+
+          if (!yearName) {
+            if (parsedYearCode) {
+              const yearMap: Record<string, string> = {
+                'E23': 'Final Year',
+                'E24': 'Third Year',
+                'E25': 'Second Year',
+                'E26': 'First Year'
+              };
+              yearName = yearMap[parsedYearCode] || 'Others';
+            } else {
+              yearName = 'Others';
+            }
           }
         }
 
