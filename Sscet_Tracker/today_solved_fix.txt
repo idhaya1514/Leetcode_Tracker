@@ -1,0 +1,101 @@
+# Fix for "Today Solved" calculation bug
+
+The bug happens because the frontend uses a 24-hour rolling window (`now - timestamp < 86400 seconds`) instead of a calendar day (midnight to midnight). This means a problem solved at 10 PM yesterday will still count as "Today" if you check at 9 AM today.
+
+When you are ready to apply the fix, open `frontend/src/app/services/api.ts` and replace the calculation logic with the following code that uses true calendar boundaries.
+
+### Find this around line 877:
+```typescript
+    const now = Math.floor(Date.now() / 1000);
+    const SECONDS_IN_DAY = 86400;
+
+    const activeDays = new Set<number>();
+```
+
+### Replace it with:
+```typescript
+    const now = Math.floor(Date.now() / 1000);
+    const SECONDS_IN_DAY = 86400;
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfTodaySec = Math.floor(startOfToday.getTime() / 1000);
+
+    const startOfWeek = new Date(startOfToday);
+    const diffToMondayStart = startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1;
+    startOfWeek.setDate(startOfWeek.getDate() - diffToMondayStart);
+    const startOfWeekSec = Math.floor(startOfWeek.getTime() / 1000);
+
+    const startOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 1);
+    const startOfMonthSec = Math.floor(startOfMonth.getTime() / 1000);
+
+    const activeDays = new Set<number>();
+```
+
+---
+
+### Find this around line 910:
+```typescript
+      if (diff < SECONDS_IN_DAY) submissionsToday += countNum;
+      if (diff < 7 * SECONDS_IN_DAY) weeklySubmissions += countNum;
+      if (diff < 30 * SECONDS_IN_DAY) monthlySubmissions += countNum;
+```
+
+### Replace it with:
+```typescript
+      if (ts >= startOfTodaySec) submissionsToday += countNum;
+      if (ts >= startOfWeekSec) weeklySubmissions += countNum;
+      if (ts >= startOfMonthSec) monthlySubmissions += countNum;
+```
+
+---
+
+### Find this around line 955:
+```typescript
+    const getExactSolved = (maxSeconds: number) => {
+      const solvedSet = new Set<string>();
+      let completeHistory = false;
+      
+      // If we have fewer than 20 submissions, or the oldest submission is older than our time window, 
+      // we know we have the full history for this time window.
+      if (recentSubmissions.length < 20 || (recentSubmissions.length === 20 && (now - parseInt(recentSubmissions[19].timestamp, 10)) > maxSeconds)) {
+        completeHistory = true;
+      }
+      
+      for (const sub of recentSubmissions) {
+        if (now - parseInt(sub.timestamp, 10) < maxSeconds && sub.statusDisplay === "Accepted") {
+          solvedSet.add(sub.titleSlug);
+        }
+      }
+      return { exactCount: solvedSet.size, isExact: completeHistory };
+    };
+
+    const todayData = getExactSolved(SECONDS_IN_DAY);
+    const weeklyData = getExactSolved(7 * SECONDS_IN_DAY);
+    const monthlyData = getExactSolved(30 * SECONDS_IN_DAY);
+```
+
+### Replace it with:
+```typescript
+    const getExactSolved = (minTsSec: number) => {
+      const solvedSet = new Set<string>();
+      let completeHistory = false;
+      
+      // If we have fewer than 20 submissions, or the oldest submission is older than our time window, 
+      // we know we have the full history for this time window.
+      if (recentSubmissions.length < 20 || (recentSubmissions.length === 20 && parseInt(recentSubmissions[19].timestamp, 10) < minTsSec)) {
+        completeHistory = true;
+      }
+      
+      for (const sub of recentSubmissions) {
+        if (parseInt(sub.timestamp, 10) >= minTsSec && sub.statusDisplay === "Accepted") {
+          solvedSet.add(sub.titleSlug);
+        }
+      }
+      return { exactCount: solvedSet.size, isExact: completeHistory };
+    };
+
+    const todayData = getExactSolved(startOfTodaySec);
+    const weeklyData = getExactSolved(startOfWeekSec);
+    const monthlyData = getExactSolved(startOfMonthSec);
+```
