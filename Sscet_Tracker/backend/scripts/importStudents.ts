@@ -41,12 +41,56 @@ async function main() {
     const name = row['0']?.trim();
     const registerNumber = row['1']?.trim().toUpperCase();
     const email = row['2']?.trim().toLowerCase();
-    const deptCode = row['3']?.trim().toUpperCase();
-    const yearName = row['4']?.trim();
+    let deptName = row['3']?.trim();
+    let yearName = row['4']?.trim();
     const leetcodeLink = row['5']?.trim();
 
-    // 1. Check if any field is missing
-    if (!name || !registerNumber || !email || !deptCode || !yearName || !leetcodeLink) {
+    // Automatically determine department and year if missing
+    if (!deptName || !yearName) {
+      let parsedDeptCode = null;
+      let parsedYearCode = null;
+      
+      const match = registerNumber ? registerNumber.match(/^(E\d{2})([A-Z]+)\d*$/i) : null;
+      if (match) {
+        parsedYearCode = match[1].toUpperCase();
+        parsedDeptCode = match[2].toUpperCase();
+      }
+
+      if (!deptName) {
+        if (parsedDeptCode) {
+          const deptMap: Record<string, string> = {
+            'CS': 'Computer Science and Engineering',
+            'IT': 'Information Technology',
+            'AI': 'Artificial Intelligence and Data Science',
+            'CY': 'Cyber Security',
+            'EC': 'Electronics and Communication Engineering',
+            'BM': 'Biomedical Engineering',
+            'ME': 'Mechanical Engineering',
+            'AG': 'Agricultural Engineering'
+          };
+          deptName = deptMap[parsedDeptCode] || 'Others';
+        } else {
+          deptName = 'Others';
+        }
+      }
+
+      if (!yearName) {
+        if (parsedYearCode) {
+          const yearMap: Record<string, string> = {
+            'E23': 'Final Year',
+            'E24': 'Third Year',
+            'E25': 'Second Year',
+            'E26': 'First Year'
+          };
+          yearName = yearMap[parsedYearCode] || 'Others';
+        } else {
+          yearName = 'Others';
+        }
+      }
+    }
+
+    // 1. Check if any field is missing (deptName and yearName are guaranteed to have a value now)
+    if (!name || !registerNumber || !email || !leetcodeLink) {
       if (name || registerNumber || email) { // only count actual attempts, not blank lines
         skippedMissing++;
         console.log(`Skipping (missing fields): ${name || 'Unknown'} - ${registerNumber || 'Unknown'}`);
@@ -76,9 +120,9 @@ async function main() {
     seenEmails.add(email);
 
     // Ensure Department exists
-    let department = await prisma.department.findUnique({ where: { code: deptCode } });
+    let department = await prisma.department.findUnique({ where: { code: deptName } });
     if (!department) {
-      department = await prisma.department.create({ data: { code: deptCode, name: deptCode } });
+      department = await prisma.department.create({ data: { code: deptName, name: deptName } });
     }
 
     // Ensure AcademicYear exists
