@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { prisma } from './index';
+import { prisma } from './prisma';
 import { sendInactivityWarning } from './email';
 
 // This runs every day at 9:00 AM
