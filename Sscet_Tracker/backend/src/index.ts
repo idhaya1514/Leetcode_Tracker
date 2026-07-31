@@ -292,11 +292,16 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
 
     for (const row of data as any[]) {
       try {
-        const email = row['Email']?.toString().toLowerCase().trim();
-        const registerNumber = row['Register Number']?.toString().trim();
-        const name = row['Student Name']?.toString().trim();
-        let deptName = row['Department']?.toString().trim();
-        let yearName = row['Academic Year']?.toString().trim();
+        let email, registerNumber, name, deptName, yearName;
+
+        for (const key of Object.keys(row)) {
+          const lowerKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (lowerKey.includes('email')) email = row[key]?.toString().toLowerCase().trim();
+          else if (lowerKey.includes('registernumber') || lowerKey === 'sin') registerNumber = row[key]?.toString().trim();
+          else if (lowerKey.includes('studentname') || lowerKey === 'name') name = row[key]?.toString().trim();
+          else if (lowerKey.includes('department') || lowerKey === 'dept') deptName = row[key]?.toString().trim();
+          else if (lowerKey.includes('academicyear') || lowerKey === 'year') yearName = row[key]?.toString().trim();
+        }
 
         if (!deptName || !yearName) {
           let parsedDeptCode = null;
