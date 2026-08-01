@@ -88,83 +88,99 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
-      // Fetch existing students to find register numbers for missing ones
       const studentsRes = await fetch(`${API_BASE_URL}/students`);
       let existingStudents: any[] = [];
       if (studentsRes.ok) {
         existingStudents = await studentsRes.json();
       }
 
-      // Create strict Excel structure for the frozen backend
-      const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
-      const worksheetData = [headers];
-      
       const validData = previewData.filter(row => {
         const name = (row.name || "").trim();
-        return name !== ""; // Only require Name now, we will try to find RegNo
+        return name !== "";
       });
 
-      if (validData.length === 0) return toast.error("No valid data to import");
+      if (validData.length === 0) {
+        setIsUploading(false);
+        return toast.error("No valid data to import");
+      }
 
-      validData.forEach((row, idx) => {
+      let successCount = 0;
+      let failedCount = 0;
+      let firstError = "";
+
+      // Process sequentially to not overload the server
+      for (let i = 0; i < validData.length; i++) {
+        const row = validData[i];
         let reg = (row.registerNumber || row.cin || "").trim();
         const name = (row.name || "").trim();
+        const department = (row.department || "").trim();
+        const academicYear = (row.year || "").trim();
+        let email = (row.email || "").trim();
+        const leetCodeUrl = (row.leetcodeUrl || "").trim();
         
-        // If register number is missing from CSV, try to find it in the database by Name
-        if (reg === "") {
-          const match = existingStudents.find(s => s.name?.toLowerCase().trim() === name.toLowerCase());
-          if (match && match.registerNumber) {
-            reg = match.registerNumber;
-          }
+        let leetCodeUsername = "";
+        if (leetCodeUrl) {
+          const parts = leetCodeUrl.split('/');
+          leetCodeUsername = parts[parts.length - 1] || parts[parts.length - 2] || "";
         }
 
-        // If STILL empty, use a placeholder so the backend doesn't crash, but it will create a new student
-        if (reg === "") reg = `UNKNOWN_REG_${idx}`;
-        
-        worksheetData.push([
-          reg, 
-          name,
-          (row.department || "").trim() || undefined,
-          (row.year || "").trim() || undefined,
-          (row.email || "").trim() || undefined,
-          (row.leetcodeUrl || "").trim() || undefined
-        ]);
-      });
-      
-      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Students");
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      const formData = new FormData();
-      formData.append('file', blob, 'import.xlsx');
+        // Auto-match missing register number
+        let existingId = null;
+        if (reg === "") {
+          const match = existingStudents.find(s => s.name?.toLowerCase().trim() === name.toLowerCase());
+          if (match) {
+            reg = match.registerNumber;
+            existingId = match.id;
+          }
+        } else {
+          const match = existingStudents.find(s => s.registerNumber === reg);
+          if (match) existingId = match.id;
+        }
 
-      const res = await fetch(`${API_BASE_URL}/import/students`, {
-        method: "POST",
-        body: formData
-      });
+        if (reg === "") reg = `UNKNOWN_REG_${i}`;
+        if (email === "") email = undefined as any; // Don't send empty strings for unique constraints
 
-      const rawText = await res.text();
-      
-      let result;
-      try {
-        result = JSON.parse(rawText);
-      } catch (err) {
-        throw new Error(`Server returned invalid response. Text: ${rawText.substring(0, 200)}`);
+        try {
+          let res;
+          const payload = {
+             name, registerNumber: reg, department, academicYear, email, password: reg, leetCodeUrl, leetCodeUsername
+          };
+
+          if (existingId) {
+            res = await fetch(`${API_BASE_URL}/students/${existingId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            res = await fetch(`${API_BASE_URL}/students`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          }
+
+          if (res.ok) {
+            successCount++;
+          } else {
+            const errData = await res.json();
+            failedCount++;
+            if (!firstError) firstError = errData.error || "Failed to save student";
+          }
+        } catch (e: any) {
+          failedCount++;
+          if (!firstError) firstError = e.message;
+        }
       }
 
-      if (!res.ok) throw new Error(result.error || "Failed to import students");
-      
-      const failed = result.summary?.failed || 0;
-      if (failed > 0 && result.errors?.length > 0) {
-        toast.error(`Imported some, but ${failed} failed. First error: ${result.errors[0].error}`, { id: toastId, duration: 8000 });
+      if (failedCount > 0) {
+        toast.error(`Imported ${successCount}, but ${failedCount} failed. Error: ${firstError}`, { id: toastId, duration: 8000 });
       } else {
-        toast.success(result.message || "Import completed!", { id: toastId });
+        toast.success(`${successCount} students imported successfully!`, { id: toastId });
       }
       
-      setSummary(result.summary || { created: result.success || 0 });
-      onSuccess();
+      setSummary({ created: successCount, updated: 0, failed: failedCount });
+      if (successCount > 0) onSuccess();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message, { id: toastId });
