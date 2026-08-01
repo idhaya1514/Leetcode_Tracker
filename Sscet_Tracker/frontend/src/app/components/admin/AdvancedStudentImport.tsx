@@ -65,8 +65,8 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: "binary" });
+        const arrayBuffer = evt.target?.result as ArrayBuffer;
+        const wb = XLSX.read(arrayBuffer, { type: "array" });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
@@ -79,7 +79,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         setIsProcessing(false);
       }
     };
-    reader.readAsBinaryString(uploadedFile);
+    reader.readAsArrayBuffer(uploadedFile);
   };
 
   const handleImport = async () => {
