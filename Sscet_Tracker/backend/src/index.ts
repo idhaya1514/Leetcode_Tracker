@@ -291,6 +291,7 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
     let successCount = 0; 
     let skippedDuplicates = 0; 
     let emptyRows = 0;
+    let firstError: string | null = null;
 
     for (const row of data as any[]) {
       try {
@@ -396,19 +397,28 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
           });
           successCount++;
         }
-      } catch (rowError) {
+      } catch (rowError: any) {
         // Silently skip completely invalid rows that cause DB errors
         console.error("Row import error:", rowError);
+        if (!firstError) {
+          firstError = rowError.message || rowError.toString();
+        }
         emptyRows++; 
       }
     }
 
+    let finalMessage = `${successCount} students imported successfully.`;
+    if (firstError) {
+      finalMessage += `\nHowever, some rows failed due to database error: ${firstError.substring(0, 150)}...`;
+    }
+
     res.json({
-      message: `${successCount} students imported successfully.`,
+      message: finalMessage,
       summary: {
         success: successCount,
         skipped: skippedDuplicates,
-        empty: emptyRows
+        empty: emptyRows,
+        error: firstError
       }
     });
 
