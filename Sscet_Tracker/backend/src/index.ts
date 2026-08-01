@@ -396,6 +396,7 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         successCount++;
       } catch (rowError) {
         // Silently skip completely invalid rows that cause DB errors
+        console.error("Row import error:", rowError);
         emptyRows++; 
       }
     }
@@ -413,6 +414,22 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
     console.error("Import Error:", error);
     res.status(500).json({ error: error.message || 'Failed to import students' });
   }
+});
+
+// --- TEMPORARY SERVER UPDATE ROUTE ---
+app.get('/api/update-server-db', (req, res) => {
+  const { exec } = require('child_process');
+  
+  // This will force the server to update its database schema and regenerate the Prisma client remotely
+  exec('npx prisma db push --accept-data-loss && npx prisma generate', { cwd: process.cwd() }, (error: any, stdout: any, stderr: any) => {
+    if (error) {
+      return res.status(500).json({ error: error.message, stderr });
+    }
+    res.json({ 
+      message: "Server Database successfully updated remotely! Please restart your server if needed.", 
+      stdout 
+    });
+  });
 });
 
 // --- Settings ---
