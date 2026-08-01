@@ -89,26 +89,29 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     const toastId = toast.loading("Importing students...");
     try {
       // HACK: Since the live server deployment is failing and we cannot update the backend, 
-      // we must convert the flexible JSON back into a strict CSV format that the OLD backend expects!
+      // we must convert the flexible JSON back into a strict Excel format that the OLD backend expects!
       const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
-      const csvRows = [headers.join(",")];
+      const worksheetData = [headers];
       
       previewData.forEach(row => {
-        const values = [
+        worksheetData.push([
           row.registerNumber || row.cin || "", 
           row.name || "",
           row.department || "",
           row.year || "",
           row.email || "",
           row.leetcodeUrl || ""
-        ];
-        csvRows.push(values.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(","));
+        ]);
       });
       
-      const csvString = csvRows.join("\n");
-      const blob = new Blob([csvString], { type: 'text/csv' });
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+      
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const formData = new FormData();
-      formData.append('file', blob, 'import.csv');
+      formData.append('file', blob, 'import.xlsx');
 
       const res = await fetch(`${API_BASE_URL}/import/students`, {
         method: "POST",
