@@ -68,7 +68,13 @@ async function main() {
             'ME': 'Mechanical Engineering',
             'AG': 'Agricultural Engineering'
           };
-          deptName = deptMap[parsedDeptCode] || 'Others';
+          deptName = 'Others';
+          for (const [key, value] of Object.entries(deptMap)) {
+            if (parsedDeptCode.startsWith(key)) {
+              deptName = value;
+              break;
+            }
+          }
         } else {
           deptName = 'Others';
         }
