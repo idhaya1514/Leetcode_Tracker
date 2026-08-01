@@ -88,11 +88,31 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
-      // Use API_BASE_URL which handles network IP access properly (no hardcoded localhost)
-      const res = await fetch(`${API_BASE_URL}/students/import-v2`, {
+      // HACK: Since the live server deployment is failing and we cannot update the backend, 
+      // we must convert the flexible JSON back into a strict CSV format that the OLD backend expects!
+      const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
+      const csvRows = [headers.join(",")];
+      
+      previewData.forEach(row => {
+        const values = [
+          row.registerNumber || row.cin || "", 
+          row.name || "",
+          row.department || "",
+          row.year || "",
+          row.email || "",
+          row.leetcodeUrl || ""
+        ];
+        csvRows.push(values.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(","));
+      });
+      
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const formData = new FormData();
+      formData.append('file', blob, 'import.csv');
+
+      const res = await fetch(`${API_BASE_URL}/import/students`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ students: previewData })
+        body: formData
       });
       
       let result;
