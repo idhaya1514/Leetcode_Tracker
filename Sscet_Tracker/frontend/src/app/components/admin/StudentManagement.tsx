@@ -210,7 +210,23 @@ export default function StudentManagement() {
     return students.filter(s => {
       const matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.registerNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const matchYear = filterYear === "All" || s.academicYear === filterYear;
-      const matchDept = filterDept === "All" || s.department === filterDept;
+      
+      let matchDept = filterDept === "All";
+      if (!matchDept) {
+        const d = (s.department || "").toUpperCase().replace(/[^A-Z]/g, '');
+        const f = filterDept.toUpperCase().replace(/[^A-Z]/g, '');
+        
+        if (f.includes('INFORMATIONTECHNOLOGY') && (d === 'IT' || d.includes('INFORMATIONTECHNOLOGY'))) matchDept = true;
+        else if (f.includes('COMPUTERSCIENCE') && (d === 'CS' || d === 'CSE' || d.includes('COMPUTERSCIENCE'))) matchDept = true;
+        else if (f.includes('ARTIFICIALINTELLIGENCE') && (d === 'AI' || d === 'AIDS' || d.includes('ARTIFICIALINTELLIGENCE'))) matchDept = true;
+        else if (f.includes('CYBER') && (d === 'CY' || d.includes('CYBER'))) matchDept = true;
+        else if (f.includes('ELECTRONICS') && (d === 'EC' || d === 'ECE' || d.includes('ELECTRONICS'))) matchDept = true;
+        else if (f.includes('BIOMEDICAL') && (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL'))) matchDept = true;
+        else if (f.includes('MECHANICAL') && (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL'))) matchDept = true;
+        else if (f.includes('AGRICULTUR') && (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR'))) matchDept = true;
+        else if (s.department === filterDept) matchDept = true;
+      }
+
       return matchSearch && matchYear && matchDept;
     });
   }, [students, searchTerm, filterYear, filterDept]);
