@@ -130,7 +130,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
       
       const failed = result.summary?.failed || 0;
       if (failed > 0 && result.errors?.length > 0) {
-        toast.error(`Imported some, but ${failed} failed. First error: ${result.errors[0].error}`, { duration: 8000 });
+        toast.error(`Imported some, but ${failed} failed. First error: ${result.errors[0].error}`, { id: toastId, duration: 8000 });
       } else {
         toast.success(result.message || "Import completed!", { id: toastId });
       }
