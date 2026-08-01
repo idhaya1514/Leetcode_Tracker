@@ -92,15 +92,21 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
       const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
       const worksheetData = [headers];
       
-      previewData.forEach((row, idx) => {
+      const validData = previewData.filter(row => {
         const reg = (row.registerNumber || row.cin || "").trim();
-        const finalReg = reg ? reg : `UNKNOWN_REG_${idx}`;
         const name = (row.name || "").trim();
-        const finalName = name ? name : "Unknown Student";
+        return reg !== "" && name !== "";
+      });
+
+      if (validData.length === 0) return toast.error("No valid data to import");
+
+      validData.forEach((row, idx) => {
+        const reg = (row.registerNumber || row.cin || "").trim();
+        const name = (row.name || "").trim();
         
         worksheetData.push([
-          finalReg, 
-          finalName,
+          reg, 
+          name,
           (row.department || "").trim() || undefined,
           (row.year || "").trim() || undefined,
           (row.email || "").trim() || undefined,
