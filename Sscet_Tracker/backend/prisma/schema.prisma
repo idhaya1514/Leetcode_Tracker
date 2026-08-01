@@ -77,6 +77,7 @@ model StaffStudentAssignment {
 model Student {
   id             String        @id @default(uuid())
   registerNumber String        @unique
+  cin            String?       @unique
   email          String?       @unique
   name           String
   password       String?

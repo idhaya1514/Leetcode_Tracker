@@ -24,9 +24,12 @@ export interface StudentRecord {
   createdAt: string;
 }
 
+import AdvancedStudentImport from "./AdvancedStudentImport";
+
 export default function StudentManagement() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -239,20 +242,12 @@ export default function StudentManagement() {
             <Code2 className="w-4 h-4" /> Sync LeetCode
           </button>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
+            onClick={() => setIsImportModalOpen(true)}
             className="px-4 py-2 bg-cream-200 text-ink-700 text-sm font-medium rounded-lg hover:bg-cream-300 transition-colors shadow-sm flex items-center gap-2"
           >
-            {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            Import CSV
+            <Upload className="w-4 h-4" />
+            Import CSV / Excel
           </button>
-          <input
-            type="file"
-            accept=".csv, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImport}
-          />
           <button 
             onClick={() => {
               setEditingId(null);
@@ -438,7 +433,17 @@ export default function StudentManagement() {
           </div>
         </div>
       )}
+
+      {isImportModalOpen && (
+        <AdvancedStudentImport 
+          onClose={() => setIsImportModalOpen(false)} 
+          onSuccess={() => {
+            setIsImportModalOpen(false);
+            loadStudents();
+          }} 
+        />
+      )}
+
     </div>
   );
 }
-

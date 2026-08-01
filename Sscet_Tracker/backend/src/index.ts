@@ -428,6 +428,139 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
   }
 });
 
+// --- NEW ADVANCED IMPORT V2 ---
+app.post('/api/students/import-v2', async (req, res) => {
+  try {
+    const { students } = req.body;
+    if (!Array.isArray(students)) {
+      return res.status(400).json({ error: "Invalid payload format. Expected 'students' array." });
+    }
+
+    let successCount = 0;
+    let updatedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+    const errors: Array<{ row: number; error: string }> = [];
+
+    // Pre-fetch departments and years for faster mapping
+    const departments = await prisma.department.findMany();
+    const years = await prisma.academicYear.findMany();
+
+    for (let i = 0; i < students.length; i++) {
+      const row = students[i];
+      try {
+        // Find existing student by Register Number OR CIN
+        let existingStudent = null;
+        if (row.registerNumber) {
+          existingStudent = await prisma.student.findUnique({ where: { registerNumber: row.registerNumber.toUpperCase() } });
+        }
+        if (!existingStudent && row.cin) {
+          existingStudent = await prisma.student.findUnique({ where: { cin: row.cin.toUpperCase() } });
+        }
+
+        // Map Department
+        let deptId = null;
+        if (row.department) {
+          const dept = departments.find(d => d.name.toLowerCase().includes(row.department.toLowerCase()) || d.code.toLowerCase() === row.department.toLowerCase());
+          if (dept) deptId = dept.id;
+        }
+
+        // Map Year
+        let yearId = null;
+        if (row.year) {
+          const year = years.find(y => y.year.toLowerCase().includes(row.year.toLowerCase()));
+          if (year) yearId = year.id;
+        }
+
+        const dataToSave = {
+          name: row.name || (existingStudent ? existingStudent.name : "Unknown Student"),
+          cin: row.cin ? row.cin.toUpperCase() : undefined,
+          email: row.email || undefined,
+          mobileNumber: row.phone || undefined,
+          departmentId: deptId || undefined,
+          academicYearId: yearId || undefined,
+        };
+
+        if (existingStudent) {
+          // Update existing
+          await prisma.student.update({
+            where: { id: existingStudent.id },
+            data: dataToSave
+          });
+          
+          // Update LeetCode URL if provided
+          if (row.leetcodeUrl) {
+            let username = "";
+            const parts = row.leetcodeUrl.split("leetcode.com/");
+            const path = parts[1] || "";
+            const segments = path.split("/").filter(Boolean);
+            if (segments[0] === "u" && segments[1]) username = segments[1];
+            else if (segments[0]) username = segments[0];
+
+            if (username) {
+              await prisma.leetCodeProfile.upsert({
+                where: { studentId: existingStudent.id },
+                update: { username, profileUrl: row.leetcodeUrl },
+                create: { studentId: existingStudent.id, username, profileUrl: row.leetcodeUrl }
+              });
+            }
+          }
+          updatedCount++;
+        } else {
+          // Create new
+          // If register number is completely missing, generate a dummy one to satisfy unique constraint
+          const regNo = row.registerNumber ? row.registerNumber.toUpperCase() : (row.cin ? row.cin.toUpperCase() : `GUEST-${require('crypto').randomUUID().substring(0, 8)}`);
+          
+          const newStudent = await prisma.student.create({
+            data: {
+              ...dataToSave,
+              registerNumber: regNo,
+              password: regNo
+            }
+          });
+
+          // Create LeetCode Profile if provided
+          if (row.leetcodeUrl) {
+            let username = "";
+            const parts = row.leetcodeUrl.split("leetcode.com/");
+            const path = parts[1] || "";
+            const segments = path.split("/").filter(Boolean);
+            if (segments[0] === "u" && segments[1]) username = segments[1];
+            else if (segments[0]) username = segments[0];
+
+            if (username) {
+              await prisma.leetCodeProfile.create({
+                data: { studentId: newStudent.id, username, profileUrl: row.leetcodeUrl }
+              });
+            }
+          }
+          successCount++;
+        }
+      } catch (err: any) {
+        console.error(`Row ${i + 1} Error:`, err.message);
+        failedCount++;
+        errors.push({ row: i + 1, error: err.message || "Unknown database error" });
+      }
+    }
+
+    res.json({
+      message: "Import processing completed.",
+      summary: {
+        total: students.length,
+        created: successCount,
+        updated: updatedCount,
+        skipped: skippedCount,
+        failed: failedCount,
+        errors
+      }
+    });
+
+  } catch (error: any) {
+    console.error("V2 Import Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to process import payload' });
+  }
+});
+
 // --- TEMPORARY SERVER UPDATE ROUTE ---
 app.get('/api/update-server-db', (req, res) => {
   const { exec } = require('child_process');
