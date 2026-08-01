@@ -79,7 +79,6 @@ model Student {
   registerNumber String        @unique
   email          String?       @unique
   name           String
-  admissionNumber String?
   password       String?
   mobileNumber   String?
   

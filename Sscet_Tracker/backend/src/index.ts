@@ -306,7 +306,6 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         const nameKey = keys.find(k => k.toLowerCase().includes('name') || k.toLowerCase() === 'student');
         const deptKey = keys.find(k => k.toLowerCase().includes('dept') || k.toLowerCase().includes('department'));
         const yearKey = keys.find(k => k.toLowerCase().includes('year') || k.toLowerCase().includes('batch'));
-        const admissionKey = keys.find(k => k.toLowerCase().includes('admission') || k.toLowerCase().includes('admin no'));
         const leetcodeKey = keys.find(k => {
           const lower = k.toLowerCase();
           return lower.includes('leetcode') || lower.includes('link') || lower.includes('url') || lower.includes('profile');
@@ -329,9 +328,6 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         
         if (emailKey && row[emailKey]) {
           studentData.email = row[emailKey].toString().toLowerCase().trim();
-        }
-        if (admissionKey && row[admissionKey]) {
-          studentData.admissionNumber = row[admissionKey].toString().trim();
         }
 
         if (deptKey && row[deptKey]) {
