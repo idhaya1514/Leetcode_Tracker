@@ -88,26 +88,51 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
-      const res = await fetch(`${API_BASE_URL}/students/import-v2`, {
+      // Create strict Excel structure for the frozen backend
+      const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
+      const worksheetData = [headers];
+      
+      previewData.forEach((row, idx) => {
+        worksheetData.push([
+          row.registerNumber || row.cin || `UNKNOWN_REG_${idx}`, 
+          row.name || "Unknown Student",
+          row.department || "",
+          row.year || "",
+          row.email || "",
+          row.leetcodeUrl || ""
+        ]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      const formData = new FormData();
+      formData.append('file', blob, 'import.xlsx');
+
+      const res = await fetch(`${API_BASE_URL}/import/students`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(previewData)
+        body: formData
       });
 
-      let result;
       const rawText = await res.text();
+      
+      let result;
       try {
         result = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error(`Server Error: ${rawText.substring(0, 500)}`);
+      } catch (err) {
+        throw new Error(`Server returned invalid response. Text: ${rawText.substring(0, 200)}`);
       }
 
       if (!res.ok) throw new Error(result.error || "Failed to import students");
       
-      setSummary(result.summary);
+      setSummary(result.summary || { created: result.success || 0 });
       toast.success(result.message || "Import completed!", { id: toastId });
       onSuccess();
     } catch (err: any) {
+      console.error(err);
       toast.error(err.message, { id: toastId });
     } finally {
       setIsUploading(false);
