@@ -96,10 +96,10 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         worksheetData.push([
           row.registerNumber || row.cin || `UNKNOWN_REG_${idx}`, 
           row.name || "Unknown Student",
-          row.department || "",
-          row.year || "",
-          row.email || "",
-          row.leetcodeUrl || ""
+          row.department || undefined,
+          row.year || undefined,
+          row.email || undefined,
+          row.leetcodeUrl || undefined
         ]);
       });
       
@@ -128,8 +128,14 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
 
       if (!res.ok) throw new Error(result.error || "Failed to import students");
       
+      const failed = result.summary?.failed || 0;
+      if (failed > 0 && result.errors?.length > 0) {
+        toast.error(`Imported some, but ${failed} failed. First error: ${result.errors[0].error}`, { duration: 8000 });
+      } else {
+        toast.success(result.message || "Import completed!", { id: toastId });
+      }
+      
       setSummary(result.summary || { created: result.success || 0 });
-      toast.success(result.message || "Import completed!", { id: toastId });
       onSuccess();
     } catch (err: any) {
       console.error(err);
