@@ -81,7 +81,7 @@ router.get('/students/:staffId', async (req, res) => {
           include: {
             department: true,
             academicYear: true,
-            attendance: {
+            attendanceRecords: {
               where: { date: { gte: new Date(new Date().setHours(0,0,0,0)) } },
               take: 1
             },
@@ -99,7 +99,7 @@ router.get('/students/:staffId', async (req, res) => {
 
     const students = assignments.map(a => {
       const s = a.student;
-      const isPresent = s.attendance.length > 0 && s.attendance[0].status === 'PRESENT';
+      const isPresent = s.attendanceRecords.length > 0 && s.attendanceRecords[0].status === 'PRESENT';
       const todaySolved = s.taskAssignments.length;
       const totalSolved = s.leetCodeProfile?.totalSolved || 0;
       const performance = Math.min(100, Math.round((totalSolved / 500) * 100));
