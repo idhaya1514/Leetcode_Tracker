@@ -312,17 +312,20 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
           return lower.includes('leetcode') || lower.includes('link') || lower.includes('url') || lower.includes('profile');
         });
 
-        // We skip rows that have absolutely no Register Number or Name
-        if (!regKey || !row[regKey] || !nameKey || !row[nameKey]) {
+        // We skip rows that have absolutely no Register Number
+        if (!regKey || !row[regKey]) {
           emptyRows++;
           continue;
         }
 
         const registerNumber = row[regKey].toString().trim().toUpperCase();
-        const name = row[nameKey].toString().trim();
         
-        // Build dynamic update/create payload
-        const studentData: any = { name };
+        // Build dynamic update payload
+        const studentData: any = {};
+        
+        if (nameKey && row[nameKey]) {
+          studentData.name = row[nameKey].toString().trim();
+        }
         
         if (emailKey && row[emailKey]) {
           studentData.email = row[emailKey].toString().toLowerCase().trim();
@@ -380,11 +383,14 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
             where: { registerNumber },
             data: studentData
           });
-          // Note: The user requested to count skipped duplicates if we want, but they also said "update only the fields available".
-          // We will count it as success since we successfully updated them, but we could also count it as duplicate.
-          // Let's increment successCount.
+          successCount++;
         } else {
-          // New student
+          // New student: Name is strictly required to create a new one!
+          if (!studentData.name) {
+            emptyRows++;
+            continue; // Skip creating if no name provided
+          }
+          
           await prisma.student.create({
             data: {
               ...studentData,
@@ -392,8 +398,8 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
               password: registerNumber // Default password
             }
           });
+          successCount++;
         }
-        successCount++;
       } catch (rowError) {
         // Silently skip completely invalid rows that cause DB errors
         console.error("Row import error:", rowError);
