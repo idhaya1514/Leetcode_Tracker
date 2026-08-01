@@ -3,6 +3,8 @@ import { Upload, X, CheckCircle, AlertTriangle, FileSpreadsheet, Download, Loade
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
+import { API_BASE_URL } from "../../services/api";
+
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
@@ -86,10 +88,8 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
-      // NOTE: Update BASE_URL dynamically based on environment
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-      
-      const res = await fetch(`${API_URL}/api/students/import-v2`, {
+      // Use API_BASE_URL which handles network IP access properly (no hardcoded localhost)
+      const res = await fetch(`${API_BASE_URL}/students/import-v2`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ students: previewData })
