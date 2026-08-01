@@ -88,21 +88,38 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
+      // Fetch existing students to find register numbers for missing ones
+      const studentsRes = await fetch(`${API_BASE_URL}/students`);
+      let existingStudents: any[] = [];
+      if (studentsRes.ok) {
+        existingStudents = await studentsRes.json();
+      }
+
       // Create strict Excel structure for the frozen backend
       const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
       const worksheetData = [headers];
       
       const validData = previewData.filter(row => {
-        const reg = (row.registerNumber || row.cin || "").trim();
         const name = (row.name || "").trim();
-        return reg !== "" && name !== "";
+        return name !== ""; // Only require Name now, we will try to find RegNo
       });
 
       if (validData.length === 0) return toast.error("No valid data to import");
 
       validData.forEach((row, idx) => {
-        const reg = (row.registerNumber || row.cin || "").trim();
+        let reg = (row.registerNumber || row.cin || "").trim();
         const name = (row.name || "").trim();
+        
+        // If register number is missing from CSV, try to find it in the database by Name
+        if (reg === "") {
+          const match = existingStudents.find(s => s.name?.toLowerCase().trim() === name.toLowerCase());
+          if (match && match.registerNumber) {
+            reg = match.registerNumber;
+          }
+        }
+
+        // If STILL empty, use a placeholder so the backend doesn't crash, but it will create a new student
+        if (reg === "") reg = `UNKNOWN_REG_${idx}`;
         
         worksheetData.push([
           reg, 
