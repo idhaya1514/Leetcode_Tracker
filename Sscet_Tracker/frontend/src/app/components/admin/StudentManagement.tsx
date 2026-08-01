@@ -245,7 +245,7 @@ export default function StudentManagement() {
           </button>
           <input
             type="file"
-            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+            accept=".csv, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
             className="hidden"
             ref={fileInputRef}
             onChange={handleImport}
