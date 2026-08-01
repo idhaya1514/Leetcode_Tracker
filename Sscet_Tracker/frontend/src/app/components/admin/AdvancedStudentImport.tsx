@@ -128,8 +128,20 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
 
       if (!res.ok) throw new Error(result.error || "Failed to import students");
       
-      setSummary(result.summary);
-      toast.success(result.message, { id: toastId });
+      const uiSummary = {
+        total: previewData.length,
+        created: result.summary?.success || result.summary?.created || 0,
+        updated: result.summary?.updated || 0,
+        failed: result.summary?.empty || result.summary?.failed || 0,
+        error: result.summary?.error || result.error || null
+      };
+
+      if (uiSummary.created === 0 && uiSummary.updated === 0) {
+         throw new Error(`Import failed! Backend rejected the data.\nMessage: ${result.message}\nError details: ${uiSummary.error || "Check if Register Numbers are missing"}`);
+      }
+      
+      setSummary(uiSummary);
+      toast.success(result.message || "Import completed!", { id: toastId });
       onSuccess();
     } catch (err: any) {
       toast.error(err.message, { id: toastId });
