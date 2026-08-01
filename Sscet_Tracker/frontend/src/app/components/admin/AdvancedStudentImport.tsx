@@ -93,10 +93,10 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
       const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
       const worksheetData = [headers];
       
-      previewData.forEach(row => {
+      previewData.forEach((row, idx) => {
         worksheetData.push([
-          row.registerNumber || row.cin || "", 
-          row.name || "",
+          row.registerNumber || row.cin || `UNKNOWN_REG_${idx}`, 
+          row.name || "Unknown Student",
           row.department || "",
           row.year || "",
           row.email || "",
