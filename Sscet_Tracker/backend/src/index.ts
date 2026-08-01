@@ -300,12 +300,17 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         const nameKey = keys.find(k => k.toLowerCase().includes('name') || k.toLowerCase() === 'student');
         const deptKey = keys.find(k => k.toLowerCase().includes('dept') || k.toLowerCase().includes('department'));
         const yearKey = keys.find(k => k.toLowerCase().includes('year'));
+        const leetcodeKey = keys.find(k => {
+          const lower = k.toLowerCase();
+          return lower.includes('leetcode') || lower.includes('link') || lower.includes('url') || lower.includes('profile') || lower.includes('id');
+        });
 
         const email = emailKey ? row[emailKey]?.toString().toLowerCase().trim() : undefined;
-        const registerNumber = regKey ? row[regKey]?.toString().trim() : undefined;
+        const registerNumber = regKey ? row[regKey]?.toString().trim().toUpperCase() : undefined;
         const name = nameKey ? row[nameKey]?.toString().trim() : undefined;
         let deptName = deptKey ? row[deptKey]?.toString().trim() : undefined;
         let yearName = yearKey ? row[yearKey]?.toString().trim() : undefined;
+        const leetcodeLink = leetcodeKey ? row[leetcodeKey]?.toString().trim() : undefined;
 
         if (!deptName || !yearName) {
           let parsedDeptCode = null;
@@ -363,10 +368,40 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
         let dept = deptName ? await prisma.department.upsert({ where: { code: deptName.substring(0, 5).toUpperCase() }, update: {}, create: { code: deptName.substring(0, 5).toUpperCase(), name: deptName } }) : null;
         let year = yearName ? await prisma.academicYear.upsert({ where: { year: yearName }, update: {}, create: { year: yearName } }) : null;
 
+        let lcUsername = leetcodeLink;
+        if (leetcodeLink) {
+          if (leetcodeLink.includes('leetcode.com/u/')) {
+            lcUsername = leetcodeLink.split('leetcode.com/u/')[1].split('/')[0];
+          } else if (leetcodeLink.includes('leetcode.com/')) {
+            lcUsername = leetcodeLink.split('leetcode.com/')[1].split('/')[0];
+          }
+        }
+
+        const leetCodeProfileData = leetcodeLink && lcUsername ? {
+          upsert: {
+            create: { username: lcUsername, profileUrl: leetcodeLink },
+            update: { username: lcUsername, profileUrl: leetcodeLink }
+          }
+        } : undefined;
+
         await prisma.student.upsert({
           where: { registerNumber },
-          update: { name, email, departmentId: dept?.id, academicYearId: year?.id },
-          create: { name, email, registerNumber, password: registerNumber, departmentId: dept?.id, academicYearId: year?.id }
+          update: { 
+            name, 
+            email, 
+            departmentId: dept?.id, 
+            academicYearId: year?.id,
+            ...(leetCodeProfileData && { leetCodeProfile: leetCodeProfileData })
+          },
+          create: { 
+            name, 
+            email, 
+            registerNumber, 
+            password: registerNumber, 
+            departmentId: dept?.id, 
+            academicYearId: year?.id,
+            ...(leetCodeProfileData && { leetCodeProfile: { create: { username: lcUsername, profileUrl: leetcodeLink } } })
+          }
         });
         successCount++;
       } catch (err: any) {
@@ -790,6 +825,6 @@ app.get('/api/students/:registerNumber/staff', async (req, res) => {
 // Start background cron jobs
 startCronJobs();
 
-app.listen(PORT, () => console.log("Backend API running on http://localhost:" + PORT));
+app.listen(PORT as number, '0.0.0.0', () => console.log("Backend API running on http://localhost:" + PORT));
 
 // Trigger restart

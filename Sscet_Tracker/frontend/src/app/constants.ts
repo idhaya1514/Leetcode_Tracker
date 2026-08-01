@@ -1,17 +1,19 @@
 export const DEPARTMENTS = [
-  "ARTIFICIAL INTELLIGENCE",
-  "COMPUTER SCIENCE",
-  "INFORMATION TECHNOLOGY",
-  "CYBER SECURITY",
-  "AGRICULTURE",
-  "MECHANICAL",
-  "ELECTRONICS AND COMMUNICATION ENGINEERING",
-  "BIO MEDICAL ENGINEERING"
+  "Artificial Intelligence and Data Science",
+  "Computer Science and Engineering",
+  "Information Technology",
+  "Cyber Security",
+  "Agricultural Engineering",
+  "Mechanical Engineering",
+  "Electronics and Communication Engineering",
+  "Biomedical Engineering",
+  "Others"
 ];
 
 export const ACADEMIC_YEARS = [
-  "1st year",
-  "2nd year",
-  "3rd year",
-  "4th year"
+  "First Year",
+  "Second Year",
+  "Third Year",
+  "Final Year",
+  "Others"
 ];

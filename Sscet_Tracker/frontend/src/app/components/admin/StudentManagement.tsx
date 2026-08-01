@@ -67,19 +67,19 @@ export default function StudentManagement() {
     let newDept = formData.department;
     let changed = false;
 
-    if (reg.includes("E23")) { newYear = "4th year"; changed = true; }
-    else if (reg.includes("E24")) { newYear = "3rd year"; changed = true; }
-    else if (reg.includes("E25")) { newYear = "2nd year"; changed = true; }
-    else if (reg.includes("E26")) { newYear = "1st year"; changed = true; }
+    if (reg.includes("E23")) { newYear = "Final Year"; changed = true; }
+    else if (reg.includes("E24")) { newYear = "Third Year"; changed = true; }
+    else if (reg.includes("E25")) { newYear = "Second Year"; changed = true; }
+    else if (reg.includes("E26")) { newYear = "First Year"; changed = true; }
 
-    if (reg.includes("AI")) { newDept = "ARTIFICIAL INTELLIGENCE"; changed = true; }
-    else if (reg.includes("CS")) { newDept = "COMPUTER SCIENCE"; changed = true; }
-    else if (reg.includes("IT")) { newDept = "INFORMATION TECHNOLOGY"; changed = true; }
-    else if (reg.includes("CY")) { newDept = "CYBER SECURITY"; changed = true; }
-    else if (reg.includes("AG")) { newDept = "AGRICULTURE"; changed = true; }
-    else if (reg.includes("ME")) { newDept = "MECHANICAL"; changed = true; }
-    else if (reg.includes("EC")) { newDept = "ELECTRONICS AND COMMUNICATION ENGINEERING"; changed = true; }
-    else if (reg.includes("BME")) { newDept = "BIO MEDICAL ENGINEERING"; changed = true; }
+    if (reg.includes("AI")) { newDept = "Artificial Intelligence and Data Science"; changed = true; }
+    else if (reg.includes("CS")) { newDept = "Computer Science and Engineering"; changed = true; }
+    else if (reg.includes("IT")) { newDept = "Information Technology"; changed = true; }
+    else if (reg.includes("CY")) { newDept = "Cyber Security"; changed = true; }
+    else if (reg.includes("AG")) { newDept = "Agricultural Engineering"; changed = true; }
+    else if (reg.includes("ME")) { newDept = "Mechanical Engineering"; changed = true; }
+    else if (reg.includes("EC")) { newDept = "Electronics and Communication Engineering"; changed = true; }
+    else if (reg.includes("BM")) { newDept = "Biomedical Engineering"; changed = true; }
 
     if (changed) {
       setFormData(p => {

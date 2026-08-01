@@ -111,14 +111,10 @@ async function main() {
       continue;
     }
 
-    // Check for existing in database
-    const existing = await prisma.student.findFirst({
-      where: { OR: [{ registerNumber }, { email }] }
-    });
-
-    if (existing) {
+    // Check for duplicates in current sheet
+    if (seenRegisters.has(registerNumber) || seenEmails.has(email)) {
       skippedDuplicates++;
-      console.log(`Skipping (already in database): ${name} - ${registerNumber}`);
+      console.log(`Skipping (duplicate in sheet): ${name} - ${registerNumber}`);
       continue;
     }
 
@@ -138,15 +134,12 @@ async function main() {
     }
 
     // Extract LeetCode username
-    // e.g. https://leetcode.com/u/Abijitha/ -> Abijitha
     let lcUsername = leetcodeLink;
     if (leetcodeLink.includes('leetcode.com/u/')) {
         lcUsername = leetcodeLink.split('leetcode.com/u/')[1].split('/')[0];
     } else if (leetcodeLink.includes('leetcode.com/')) {
         lcUsername = leetcodeLink.split('leetcode.com/')[1].split('/')[0];
     }
-    
-    // Ignore github links or malformed links (though user said add them, I will just put the whole string if it doesn't match leetcode format)
     
     studentsToAdd.push({
       name,
@@ -160,14 +153,27 @@ async function main() {
     });
   }
 
-  console.log(`\nFound ${studentsToAdd.length} valid students to add.`);
+  console.log(`\nFound ${studentsToAdd.length} valid students to add/update.`);
   console.log(`Skipped ${skippedMissing} due to missing fields.`);
-  console.log(`Skipped ${skippedDuplicates} duplicates.`);
+  console.log(`Skipped ${skippedDuplicates} duplicates in sheet.`);
 
   for (const st of studentsToAdd) {
     try {
-      await prisma.student.create({
-        data: {
+      await prisma.student.upsert({
+        where: { registerNumber: st.registerNumber },
+        update: {
+          name: st.name,
+          email: st.email,
+          departmentId: st.departmentId,
+          academicYearId: st.academicYearId,
+          leetCodeProfile: {
+            upsert: {
+              create: { username: st.lcUsername, profileUrl: st.leetcodeLink },
+              update: { username: st.lcUsername, profileUrl: st.leetcodeLink }
+            }
+          }
+        },
+        create: {
           name: st.name,
           registerNumber: st.registerNumber,
           email: st.email,
@@ -182,7 +188,7 @@ async function main() {
           }
         }
       });
-      console.log(`Added: ${st.name} (${st.registerNumber})`);
+      console.log(`Upserted: ${st.name} (${st.registerNumber})`);
     } catch (e: any) {
       console.error(`Error adding ${st.name}:`, e.message);
     }
