@@ -93,13 +93,18 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
       const worksheetData = [headers];
       
       previewData.forEach((row, idx) => {
+        const reg = (row.registerNumber || row.cin || "").trim();
+        const finalReg = reg ? reg : `UNKNOWN_REG_${idx}`;
+        const name = (row.name || "").trim();
+        const finalName = name ? name : "Unknown Student";
+        
         worksheetData.push([
-          row.registerNumber || row.cin || `UNKNOWN_REG_${idx}`, 
-          row.name || "Unknown Student",
-          row.department || undefined,
-          row.year || undefined,
-          row.email || undefined,
-          row.leetcodeUrl || undefined
+          finalReg, 
+          finalName,
+          (row.department || "").trim() || undefined,
+          (row.year || "").trim() || undefined,
+          (row.email || "").trim() || undefined,
+          (row.leetcodeUrl || "").trim() || undefined
         ]);
       });
       
