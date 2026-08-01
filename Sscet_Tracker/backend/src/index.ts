@@ -292,16 +292,20 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
 
     for (const row of data as any[]) {
       try {
-        let email, registerNumber, name, deptName, yearName;
+        const keys = Object.keys(row);
+        
+        // Flexibly find the correct column based on common keywords
+        const emailKey = keys.find(k => k.toLowerCase().includes('email'));
+        const regKey = keys.find(k => k.toLowerCase().includes('reg') || k.toLowerCase().includes('sin'));
+        const nameKey = keys.find(k => k.toLowerCase().includes('name') || k.toLowerCase() === 'student');
+        const deptKey = keys.find(k => k.toLowerCase().includes('dept') || k.toLowerCase().includes('department'));
+        const yearKey = keys.find(k => k.toLowerCase().includes('year'));
 
-        for (const key of Object.keys(row)) {
-          const lowerKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (lowerKey.includes('email')) email = row[key]?.toString().toLowerCase().trim();
-          else if (lowerKey.includes('registernumber') || lowerKey === 'sin') registerNumber = row[key]?.toString().trim();
-          else if (lowerKey.includes('studentname') || lowerKey === 'name') name = row[key]?.toString().trim();
-          else if (lowerKey.includes('department') || lowerKey === 'dept') deptName = row[key]?.toString().trim();
-          else if (lowerKey.includes('academicyear') || lowerKey === 'year') yearName = row[key]?.toString().trim();
-        }
+        const email = emailKey ? row[emailKey]?.toString().toLowerCase().trim() : undefined;
+        const registerNumber = regKey ? row[regKey]?.toString().trim() : undefined;
+        const name = nameKey ? row[nameKey]?.toString().trim() : undefined;
+        let deptName = deptKey ? row[deptKey]?.toString().trim() : undefined;
+        let yearName = yearKey ? row[yearKey]?.toString().trim() : undefined;
 
         if (!deptName || !yearName) {
           let parsedDeptCode = null;
@@ -325,7 +329,13 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
                 'ME': 'Mechanical Engineering',
                 'AG': 'Agricultural Engineering'
               };
-              deptName = deptMap[parsedDeptCode] || 'Others';
+              deptName = 'Others';
+              for (const [key, value] of Object.entries(deptMap)) {
+                if (parsedDeptCode.startsWith(key)) {
+                  deptName = value;
+                  break;
+                }
+              }
             } else {
               deptName = 'Others';
             }
