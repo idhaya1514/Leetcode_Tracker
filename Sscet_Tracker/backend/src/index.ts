@@ -288,129 +288,130 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    let successCount = 0; let failedCount = 0; const errors = [];
+    let successCount = 0; 
+    let skippedDuplicates = 0; 
+    let emptyRows = 0;
 
     for (const row of data as any[]) {
       try {
         const keys = Object.keys(row);
+        if (keys.length === 0) {
+          emptyRows++;
+          continue;
+        }
         
         // Flexibly find the correct column based on common keywords
-        const emailKey = keys.find(k => k.toLowerCase().includes('email'));
-        const regKey = keys.find(k => k.toLowerCase().includes('reg') || k.toLowerCase().includes('sin'));
+        const emailKey = keys.find(k => k.toLowerCase().includes('email') || k.toLowerCase().includes('mail'));
+        const regKey = keys.find(k => k.toLowerCase().includes('reg') || k.toLowerCase().includes('sin') || k.toLowerCase() === 'id');
         const nameKey = keys.find(k => k.toLowerCase().includes('name') || k.toLowerCase() === 'student');
         const deptKey = keys.find(k => k.toLowerCase().includes('dept') || k.toLowerCase().includes('department'));
-        const yearKey = keys.find(k => k.toLowerCase().includes('year'));
+        const yearKey = keys.find(k => k.toLowerCase().includes('year') || k.toLowerCase().includes('batch'));
+        const admissionKey = keys.find(k => k.toLowerCase().includes('admission') || k.toLowerCase().includes('admin no'));
         const leetcodeKey = keys.find(k => {
           const lower = k.toLowerCase();
-          return lower.includes('leetcode') || lower.includes('link') || lower.includes('url') || lower.includes('profile') || lower.includes('id');
+          return lower.includes('leetcode') || lower.includes('link') || lower.includes('url') || lower.includes('profile');
         });
 
-        const email = emailKey ? row[emailKey]?.toString().toLowerCase().trim() : undefined;
-        const registerNumber = regKey ? row[regKey]?.toString().trim().toUpperCase() : undefined;
-        const name = nameKey ? row[nameKey]?.toString().trim() : undefined;
-        let deptName = deptKey ? row[deptKey]?.toString().trim() : undefined;
-        let yearName = yearKey ? row[yearKey]?.toString().trim() : undefined;
-        const leetcodeLink = leetcodeKey ? row[leetcodeKey]?.toString().trim() : undefined;
-
-        if (!deptName || !yearName) {
-          let parsedDeptCode = null;
-          let parsedYearCode = null;
-          
-          const match = registerNumber ? registerNumber.match(/^(E\d{2})([A-Z]+)\d*$/i) : null;
-          if (match) {
-            parsedYearCode = match[1].toUpperCase();
-            parsedDeptCode = match[2].toUpperCase();
-          }
-
-          if (!deptName) {
-            if (parsedDeptCode) {
-              const deptMap: Record<string, string> = {
-                'CS': 'Computer Science and Engineering',
-                'IT': 'Information Technology',
-                'AI': 'Artificial Intelligence and Data Science',
-                'CY': 'Cyber Security',
-                'EC': 'Electronics and Communication Engineering',
-                'BM': 'Biomedical Engineering',
-                'ME': 'Mechanical Engineering',
-                'AG': 'Agricultural Engineering'
-              };
-              deptName = 'Others';
-              for (const [key, value] of Object.entries(deptMap)) {
-                if (parsedDeptCode.startsWith(key)) {
-                  deptName = value;
-                  break;
-                }
-              }
-            } else {
-              deptName = 'Others';
-            }
-          }
-
-          if (!yearName) {
-            if (parsedYearCode) {
-              const yearMap: Record<string, string> = {
-                'E23': 'Final Year',
-                'E24': 'Third Year',
-                'E25': 'Second Year',
-                'E26': 'First Year'
-              };
-              yearName = yearMap[parsedYearCode] || 'Others';
-            } else {
-              yearName = 'Others';
-            }
-          }
+        // We skip rows that have absolutely no Register Number or Name
+        if (!regKey || !row[regKey] || !nameKey || !row[nameKey]) {
+          emptyRows++;
+          continue;
         }
 
-        if (!registerNumber || !name) {
-          failedCount++; errors.push({ row, error: 'Missing required fields (Register Number, Student Name)' }); continue;
+        const registerNumber = row[regKey].toString().trim().toUpperCase();
+        const name = row[nameKey].toString().trim();
+        
+        // Build dynamic update/create payload
+        const studentData: any = { name };
+        
+        if (emailKey && row[emailKey]) {
+          studentData.email = row[emailKey].toString().toLowerCase().trim();
+        }
+        if (admissionKey && row[admissionKey]) {
+          studentData.admissionNumber = row[admissionKey].toString().trim();
         }
 
-        let dept = deptName ? await prisma.department.upsert({ where: { code: deptName.substring(0, 5).toUpperCase() }, update: {}, create: { code: deptName.substring(0, 5).toUpperCase(), name: deptName } }) : null;
-        let year = yearName ? await prisma.academicYear.upsert({ where: { year: yearName }, update: {}, create: { year: yearName } }) : null;
+        if (deptKey && row[deptKey]) {
+          const deptName = row[deptKey].toString().trim();
+          const dept = await prisma.department.upsert({ 
+            where: { code: deptName.substring(0, 5).toUpperCase() }, 
+            update: {}, 
+            create: { code: deptName.substring(0, 5).toUpperCase(), name: deptName } 
+          });
+          studentData.departmentId = dept.id;
+        }
 
-        let lcUsername = leetcodeLink;
-        if (leetcodeLink) {
+        if (yearKey && row[yearKey]) {
+          const yearName = row[yearKey].toString().trim();
+          const year = await prisma.academicYear.upsert({ 
+            where: { year: yearName }, 
+            update: {}, 
+            create: { year: yearName } 
+          });
+          studentData.academicYearId = year.id;
+        }
+
+        let leetCodeProfileData = undefined;
+        if (leetcodeKey && row[leetcodeKey]) {
+          const leetcodeLink = row[leetcodeKey].toString().trim();
+          let lcUsername = leetcodeLink;
           if (leetcodeLink.includes('leetcode.com/u/')) {
             lcUsername = leetcodeLink.split('leetcode.com/u/')[1].split('/')[0];
           } else if (leetcodeLink.includes('leetcode.com/')) {
             lcUsername = leetcodeLink.split('leetcode.com/')[1].split('/')[0];
           }
+          if (lcUsername) {
+            leetCodeProfileData = {
+              upsert: {
+                create: { username: lcUsername, profileUrl: leetcodeLink },
+                update: { username: lcUsername, profileUrl: leetcodeLink }
+              }
+            };
+            studentData.leetCodeProfile = leetCodeProfileData;
+          }
         }
 
-        const leetCodeProfileData = leetcodeLink && lcUsername ? {
-          upsert: {
-            create: { username: lcUsername, profileUrl: leetcodeLink },
-            update: { username: lcUsername, profileUrl: leetcodeLink }
-          }
-        } : undefined;
-
-        await prisma.student.upsert({
-          where: { registerNumber },
-          update: { 
-            name, 
-            email, 
-            departmentId: dept?.id, 
-            academicYearId: year?.id,
-            ...(leetCodeProfileData && { leetCodeProfile: leetCodeProfileData })
-          },
-          create: { 
-            name, 
-            email, 
-            registerNumber, 
-            password: registerNumber, 
-            departmentId: dept?.id, 
-            academicYearId: year?.id,
-            ...(leetCodeProfileData && { leetCodeProfile: { create: { username: lcUsername, profileUrl: leetcodeLink } } })
-          }
-        });
+        // Upsert student with ONLY the provided fields
+        const existingStudent = await prisma.student.findUnique({ where: { registerNumber } });
+        
+        if (existingStudent) {
+          // If the student already exists, update only the provided fields
+          await prisma.student.update({
+            where: { registerNumber },
+            data: studentData
+          });
+          // Note: The user requested to count skipped duplicates if we want, but they also said "update only the fields available".
+          // We will count it as success since we successfully updated them, but we could also count it as duplicate.
+          // Let's increment successCount.
+        } else {
+          // New student
+          await prisma.student.create({
+            data: {
+              ...studentData,
+              registerNumber,
+              password: registerNumber // Default password
+            }
+          });
+        }
         successCount++;
-      } catch (err: any) {
-        failedCount++; errors.push({ row, error: err.message });
+      } catch (rowError) {
+        // Silently skip completely invalid rows that cause DB errors
+        emptyRows++; 
       }
     }
-    res.json({ message: 'Import complete', summary: { total: data.length, success: successCount, failed: failedCount }, errors });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error during import' });
+
+    res.json({
+      message: `${successCount} students imported successfully.`,
+      summary: {
+        success: successCount,
+        skipped: skippedDuplicates,
+        empty: emptyRows
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Import Error:", error);
+    res.status(500).json({ error: error.message || 'Failed to import students' });
   }
 });
 

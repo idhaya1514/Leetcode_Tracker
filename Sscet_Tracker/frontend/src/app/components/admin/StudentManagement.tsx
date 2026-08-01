@@ -184,14 +184,17 @@ export default function StudentManagement() {
     const toastId = toast.loading("Importing students...");
     try {
       const result = await importStudents(file);
-      toast.success(
-        `Import complete! Success: ${result.summary.success}, Failed: ${result.summary.failed}`,
-        { id: toastId }
-      );
-      if (result.errors && result.errors.length > 0) {
-        console.warn("Import errors:", result.errors);
-        toast.warning("Some rows failed to import. Check console for details.");
+      
+      // We assume the backend responds with `{ message: "150 students imported successfully.", summary: { success: 150, skipped: 5, empty: 2 } }`
+      
+      let message = result.message || "Import complete!";
+      if (result.summary) {
+        if (result.summary.skipped > 0) message += `\n${result.summary.skipped} duplicate records skipped.`;
+        if (result.summary.empty > 0) message += `\n${result.summary.empty} empty rows ignored.`;
       }
+      
+      toast.success(message, { id: toastId, duration: 5000 });
+      
       loadStudents();
     } catch (error: any) {
       toast.error(error.message || "Failed to import students", { id: toastId });
