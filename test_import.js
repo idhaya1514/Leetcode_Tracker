@@ -1,30 +1,23 @@
 const XLSX = require('xlsx');
-const FormData = require('form-data');
 
-async function test() {
+function test() {
   const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
   const worksheetData = [
     headers,
-    ["TEST1234", "Test Student", "CSE", "2024", "test@test.com", "leetcode.com/test"]
+    ["", "", "", "", "", ""] // Test what happens if values are empty strings
   ];
   
   const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Students");
-  
-  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
-  
-  const formData = new FormData();
-  formData.append('file', excelBuffer, { filename: 'import.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const json = XLSX.utils.sheet_to_json(ws);
+  console.log("JSON RESULT FOR EMPTY STRINGS:", json);
 
-  const res = await fetch("http://127.0.0.1:3000/api/import/students", {
-    method: "POST",
-    body: formData
-  });
-
-  const text = await res.text();
-  console.log("STATUS:", res.status);
-  console.log("RESPONSE:", text);
+  const worksheetData2 = [
+    headers,
+    ["   ", "Unknown Student", "", "", "", ""] 
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(worksheetData2);
+  const json2 = XLSX.utils.sheet_to_json(ws2);
+  console.log("JSON RESULT FOR SPACES:", json2);
 }
 
-test().catch(console.error);
+test();

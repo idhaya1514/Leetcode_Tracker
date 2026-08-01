@@ -88,36 +88,12 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
-      // HACK: Since the live server deployment is failing and we cannot update the backend, 
-      // we must convert the flexible JSON back into a strict Excel format that the OLD backend expects!
-      const headers = ["Register Number", "Name", "Department", "Year", "Email", "LeetCode URL"];
-      const worksheetData = [headers];
-      
-      previewData.forEach((row, idx) => {
-        worksheetData.push([
-          row.registerNumber || row.cin || `UNKNOWN_REG_${idx}`, 
-          row.name || "Unknown Student",
-          row.department || "",
-          row.year || "",
-          row.email || "",
-          row.leetcodeUrl || ""
-        ]);
-      });
-      
-      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Students");
-      
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const formData = new FormData();
-      formData.append('file', blob, 'import.xlsx');
-
-      const res = await fetch(`${API_BASE_URL}/import/students`, {
+      const res = await fetch(`${API_BASE_URL}/students/import-v2`, {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(previewData)
       });
-      
+
       let result;
       const rawText = await res.text();
       try {
@@ -128,19 +104,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
 
       if (!res.ok) throw new Error(result.error || "Failed to import students");
       
-      const uiSummary = {
-        total: previewData.length,
-        created: result.summary?.success || result.summary?.created || 0,
-        updated: result.summary?.updated || 0,
-        failed: result.summary?.empty || result.summary?.failed || 0,
-        error: result.summary?.error || result.error || null
-      };
-
-      if (uiSummary.created === 0 && uiSummary.updated === 0) {
-         throw new Error(`Import failed! Backend rejected the data.\nMessage: ${result.message}\nError details: ${uiSummary.error || "Check if Register Numbers are missing"}`);
-      }
-      
-      setSummary(uiSummary);
+      setSummary(result.summary);
       toast.success(result.message || "Import completed!", { id: toastId });
       onSuccess();
     } catch (err: any) {
