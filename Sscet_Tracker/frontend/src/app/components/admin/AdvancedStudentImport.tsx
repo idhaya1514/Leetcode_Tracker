@@ -202,6 +202,45 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
     }
   };
 
+  const fixExistingDepartments = async () => {
+    const toastId = toast.loading("Fixing old departments in database...");
+    try {
+      const studentsRes = await fetch(`${API_BASE_URL}/students`);
+      if (!studentsRes.ok) throw new Error("Could not fetch students");
+      const students = await studentsRes.json();
+      
+      let updated = 0;
+      for (const s of students) {
+        if (!s.department || !s.department.name) continue;
+        let deptName = s.department.name;
+        let newDept = deptName;
+        const d = deptName.toUpperCase().replace(/[^A-Z]/g, '');
+        
+        if (d === 'IT' || d.includes('INFORMATIONTECHNOLOGY')) newDept = 'Information Technology';
+        else if (d === 'CS' || d === 'CSE' || d.includes('COMPUTERSCIENCE')) newDept = 'Computer Science and Engineering';
+        else if (d === 'AI' || d === 'AIDS' || d.includes('ARTIFICIALINTELLIGENCE')) newDept = 'Artificial Intelligence and Data Science';
+        else if (d === 'CY' || d === 'CYBER' || d.includes('CYBER')) newDept = 'Cyber Security';
+        else if (d === 'EC' || d === 'ECE' || d.includes('ELECTRONICS')) newDept = 'Electronics and Communication Engineering';
+        else if (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL')) newDept = 'Biomedical Engineering';
+        else if (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL')) newDept = 'Mechanical Engineering';
+        else if (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR')) newDept = 'Agricultural Engineering';
+
+        if (newDept !== deptName) {
+          await fetch(`${API_BASE_URL}/students/${s.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ department: newDept })
+          });
+          updated++;
+        }
+      }
+      toast.success(`Successfully fixed ${updated} students' departments!`, { id: toastId });
+      onSuccess();
+    } catch (e: any) {
+      toast.error(`Error fixing: ${e.message}`, { id: toastId });
+    }
+  };
+
   const downloadSample = (type: string) => {
     let data: any[] = [];
     switch (type) {
@@ -298,6 +337,12 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
                   <button onClick={() => downloadSample('name_only')} className="text-xs py-2 px-3 bg-stone-100 hover:bg-stone-200 rounded-lg text-left text-ink-700 font-medium transition-colors">5. Name Only</button>
                   <button onClick={() => downloadSample('name_reg_lc')} className="text-xs py-2 px-3 bg-stone-100 hover:bg-stone-200 rounded-lg text-left text-ink-700 font-medium transition-colors">6. Name + Reg No + LeetCode</button>
                 </div>
+              </div>
+
+              <div className="text-center pt-4">
+                <button onClick={fixExistingDepartments} className="text-xs text-amber-700 bg-amber-100 px-4 py-2 rounded-lg font-medium hover:bg-amber-200 transition-colors">
+                  Run Department Data Fixer
+                </button>
               </div>
             </div>
           ) : (
