@@ -9,7 +9,8 @@ router.get('/dashboard/:staffId', async (req, res) => {
     
     // 1. Get total assigned students
     const assignments = await prisma.staffStudentAssignment.findMany({
-      where: { staffId }
+      where: { staffId },
+      include: { student: true }
     });
     const totalStudents = assignments.length;
     
@@ -17,7 +18,7 @@ router.get('/dashboard/:staffId', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const studentIds = assignments.map(a => a.studentId);
+    const studentIds = assignments.map(a => a.student.id);
     
     const presentStudents = await prisma.attendance.count({
       where: {
@@ -29,24 +30,25 @@ router.get('/dashboard/:staffId', async (req, res) => {
     const absentStudents = totalStudents - presentStudents;
     
     // 3. Get tasks assigned by this staff
-    const staffTasks = await prisma.assignment.findMany({
-      where: { assignedByStaffId: staffId }
+    const staffTasks = await prisma.task.findMany({
+      where: { createdById: staffId }
     });
     
     const taskIds = staffTasks.map(t => t.id);
     
     // 4. Get completions for these tasks today
-    const completedTasks = await prisma.assignmentCompletion.count({
+    const completedTasks = await prisma.taskAssignment.count({
       where: {
-        assignmentId: { in: taskIds },
-        completedAt: { gte: today }
+        taskId: { in: taskIds },
+        completedAt: { gte: today },
+        status: 'COMPLETED'
       }
     });
     
     // 5. Get pending tasks (assigned by this staff, not completed by assigned students)
     const totalPossibleCompletions = studentIds.length * taskIds.length; // rough estimate if all assigned to all
-    const allCompletions = await prisma.assignmentCompletion.count({
-      where: { assignmentId: { in: taskIds } }
+    const allCompletions = await prisma.taskAssignment.count({
+      where: { taskId: { in: taskIds }, status: 'COMPLETED' }
     });
     const pendingTasks = Math.max(0, totalPossibleCompletions - allCompletions);
     
@@ -83,8 +85,11 @@ router.get('/students/:staffId', async (req, res) => {
               where: { date: { gte: new Date(new Date().setHours(0,0,0,0)) } },
               take: 1
             },
-            assignmentCompletions: {
-              where: { completedAt: { gte: new Date(new Date().setHours(0,0,0,0)) } }
+            taskAssignments: {
+              where: { 
+                completedAt: { gte: new Date(new Date().setHours(0,0,0,0)) },
+                status: 'COMPLETED'
+              }
             },
             leetCodeProfile: true
           }
@@ -95,7 +100,7 @@ router.get('/students/:staffId', async (req, res) => {
     const students = assignments.map(a => {
       const s = a.student;
       const isPresent = s.attendance.length > 0 && s.attendance[0].status === 'PRESENT';
-      const todaySolved = s.assignmentCompletions.length;
+      const todaySolved = s.taskAssignments.length;
       const totalSolved = s.leetCodeProfile?.totalSolved || 0;
       const performance = Math.min(100, Math.round((totalSolved / 500) * 100));
 

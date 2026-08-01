@@ -431,6 +431,7 @@ app.post('/api/import/students', upload.single('file'), async (req, res) => {
 
 // --- NEW ADVANCED IMPORT V2 ---
 app.post('/api/students/import-v2', async (req, res) => {
+  console.log("HIT IMPORT V2 ROUTE");
   try {
     const { students } = req.body;
     if (!Array.isArray(students)) {

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { prisma } from '../index';
+import { prisma } from '../prisma';
 
 /**
  * Configure Transporter

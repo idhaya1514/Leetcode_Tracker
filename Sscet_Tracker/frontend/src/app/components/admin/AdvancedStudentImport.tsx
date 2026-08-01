@@ -95,8 +95,14 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         body: JSON.stringify({ students: previewData })
       });
       
-      const result = await res.json();
-      
+      let result;
+      const rawText = await res.text();
+      try {
+        result = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error(`Server returned HTML instead of JSON: ${rawText.substring(0, 100)}...`);
+      }
+
       if (!res.ok) throw new Error(result.error || "Failed to import students");
       
       setSummary(result.summary);
