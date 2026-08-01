@@ -32,11 +32,11 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
   const mapColumns = (row: any) => {
     const mapped: any = {};
     const keys = Object.keys(row);
-    
+
     for (const key of keys) {
       const lowerKey = key.toLowerCase().trim();
       let matched = false;
-      
+
       for (const [field, aliases] of Object.entries(ALIASES)) {
         if (aliases.includes(lowerKey)) {
           mapped[field] = String(row[key] || "").trim();
@@ -44,7 +44,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
           break;
         }
       }
-      
+
       // If it doesn't match an alias, but includes the word as a fallback
       if (!matched) {
         if (lowerKey.includes('name')) mapped.name = mapped.name || String(row[key]).trim();
@@ -84,7 +84,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
 
   const handleImport = async () => {
     if (previewData.length === 0) return toast.error("No valid data to import");
-    
+
     setIsUploading(true);
     const toastId = toast.loading("Importing students...");
     try {
@@ -113,11 +113,24 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         const row = validData[i];
         let reg = (row.registerNumber || row.cin || "").trim();
         const name = (row.name || "").trim();
-        const department = (row.department || "").trim();
+        let department = (row.department || "").trim();
         const academicYear = (row.year || "").trim();
         let email = (row.email || "").trim();
         const leetCodeUrl = (row.leetcodeUrl || "").trim();
-        
+
+        // Normalize department names
+        if (department) {
+          const d = department.toUpperCase().replace(/[^A-Z]/g, '');
+          if (d.includes('IT') || d.includes('INFORMATIONTECHNOLOGY')) department = 'Information Technology';
+          else if (d.includes('CS') || d.includes('COMPUTERSCIENCE')) department = 'Computer Science and Engineering';
+          else if (d.includes('AI') || d.includes('ARTIFICIAL INTELLIGENCE') || d.includes('AIDS')) department = 'Artificial Intelligence and Data Science';
+          else if (d.includes('CY') || d.includes('CYBER')) department = 'Cyber Security';
+          else if (d.includes('EC') || d.includes('ELECTRONICS')) department = 'Electronics and Communication Engineering';
+          else if (d.includes('BM') || d.includes('BIOMEDICAL')) department = 'Biomedical Engineering';
+          else if (d.includes('ME') || d.includes('MECHANICAL')) department = 'Mechanical Engineering';
+          else if (d.includes('AG') || d.includes('AGRICULTUR')) department = 'Agricultural Engineering';
+        }
+
         let leetCodeUsername = "";
         if (leetCodeUrl) {
           const parts = leetCodeUrl.split('/');
@@ -143,7 +156,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         try {
           let res;
           const payload = {
-             name, registerNumber: reg, department, academicYear, email, password: reg, leetCodeUrl, leetCodeUsername
+            name, registerNumber: reg, department, academicYear, email, password: reg, leetCodeUrl, leetCodeUsername
           };
 
           if (existingId) {
@@ -178,7 +191,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
       } else {
         toast.success(`${successCount} students imported successfully!`, { id: toastId });
       }
-      
+
       setSummary({ created: successCount, updated: 0, failed: failedCount });
       if (successCount > 0) onSuccess();
     } catch (err: any) {
@@ -208,7 +221,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
   return (
     <div className="fixed inset-0 bg-ink-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-cream-100 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
-        
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-stone-200 flex justify-between items-center bg-white">
           <div>
@@ -224,7 +237,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-stone-50">
-          
+
           {summary ? (
             <div className="bg-white p-8 rounded-xl border border-stone-200 text-center max-w-md mx-auto my-12">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -262,7 +275,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
             </div>
           ) : !file ? (
             <div className="space-y-6">
-              <div 
+              <div
                 className="border-2 border-dashed border-sapphire-300 bg-sapphire-50/50 rounded-xl p-12 text-center hover:bg-sapphire-50 transition-colors cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -295,7 +308,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
                   Cancel / Choose Another File
                 </button>
               </div>
-              
+
               <div className="flex-1 overflow-auto">
                 {isProcessing ? (
                   <div className="p-12 flex justify-center"><Loader2 className="w-8 h-8 text-sapphire-600 animate-spin" /></div>
@@ -345,7 +358,7 @@ export default function AdvancedStudentImport({ onClose, onSuccess }: Props) {
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   Missing fields are highlighted, but will not block the import.
                 </p>
-                <button 
+                <button
                   onClick={handleImport}
                   disabled={isUploading}
                   className="bg-sapphire-600 hover:bg-sapphire-700 text-white px-6 py-2 rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2"
