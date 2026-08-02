@@ -40,6 +40,21 @@ app.use('/api/staff', staffRouter);
 // --- Initialize Cron Jobs ---
 initializeCronJobs();
 
+// --- Seed Admin ---
+async function seedAdmin() {
+  const admin = await prisma.admin.findFirst();
+  if (!admin) {
+    await prisma.admin.create({
+      data: {
+        email: 'admin@sscet.edu.in',
+        name: 'SSCET Admin',
+        password: await bcrypt.hash('adminsscet@2026', 10)
+      }
+    });
+  }
+}
+seedAdmin();
+
 // --- Health Check ---
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
@@ -203,7 +218,7 @@ app.post('/api/students', async (req, res) => {
         name,
         registerNumber,
         email,
-        password, // Ideally hash this
+        password: password ? await bcrypt.hash(password, 10) : undefined, // Hashed password
         departmentId: dept?.id,
         academicYearId: year?.id,
       }
@@ -639,6 +654,39 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
+app.post('/api/auth/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const record = await prisma.passwordResetOTP.findFirst({
+      where: { email, otp, isUsed: false }
+    });
+    if (!record) return res.status(400).json({ error: 'Invalid verification code' });
+    if (Date.now() > record.expiresAt.getTime()) {
+      return res.status(400).json({ error: 'Verification code expired' });
+    }
+    
+    await prisma.passwordResetOTP.update({ where: { id: record.id }, data: { isUsed: true } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to verify OTP' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword, role } = req.body;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    if (role === 'student') {
+      await prisma.student.update({ where: { email }, data: { password: hashedPassword } });
+    } else if (role === 'staff') {
+      await prisma.staff.update({ where: { email }, data: { password: hashedPassword } });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
 // --- Staff Management ---
 app.get('/api/staff/all', async (req, res) => {
   try {
@@ -663,8 +711,9 @@ app.post('/api/staff/create', async (req, res) => {
     const { staffId, name, email, department, password } = req.body;
     let dept = department ? await prisma.department.upsert({ where: { code: department.substring(0, 5).toUpperCase() }, update: {}, create: { code: department.substring(0, 5).toUpperCase(), name: department } }) : null;
 
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : "";
     const staff = await prisma.staff.create({
-      data: { staffId, name, email, password, departmentId: dept?.id }
+      data: { staffId, name, email, password: hashedPassword, departmentId: dept?.id }
     });
     res.json({ success: true, staff });
   } catch (err) {

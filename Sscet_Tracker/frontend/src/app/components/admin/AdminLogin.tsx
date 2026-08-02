@@ -22,11 +22,8 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
-const ADMIN_USERNAME = "sscet";
-const ADMIN_PASSWORD = "adminsscet@2026";
-
 export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -35,17 +32,28 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!username.trim() || !password) {
+    if (!email.trim() || !password) {
       setError("Please fill in all fields.");
       return;
     }
     setIsLoading(true);
-    if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password, role: 'admin' })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
       onLogin();
-    } else {
-      setError("Invalid admin credentials.");
+    } catch (err: any) {
+      setError(err.message || "Server connection error.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -57,8 +65,8 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
           </div>
         )}
 
-        <Field label="Admin Username" icon={User}>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className={inputCls} placeholder="Enter username" />
+        <Field label="Admin Email" icon={User}>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="Enter admin email" />
         </Field>
         
         <Field label="Admin Password" icon={Lock}>

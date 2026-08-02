@@ -436,7 +436,18 @@ export async function verifyPasswordResetOTP(email: string, otp: string, role: "
         throw new Error("Invalid verification code. Please try again.");
       }
     },
-    () => Promise.reject("Not implemented via REST"),
+    async () => {
+      const res = await fetch("http://localhost:3000/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, otp, role })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Invalid verification code.");
+      }
+      return res;
+    },
     () => {
       // Fallback
       const record = mockOtpStore[normalizedEmail];
@@ -472,7 +483,18 @@ export async function updatePasswordSecurely(email: string, newPassword: string,
         .update({ password: newPassword })
         .eq("email", normalizedEmail);
     },
-    () => Promise.reject("Not implemented via REST"),
+    async () => {
+      const res = await fetch("http://localhost:3000/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, newPassword, role })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to reset password.");
+      }
+      return res;
+    },
     () => {
       // Fallback
       if (!mockOtpStore[normalizedEmail + "_verified"]) {
