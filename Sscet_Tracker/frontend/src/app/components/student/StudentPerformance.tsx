@@ -56,6 +56,29 @@ export default function StudentPerformance({ onBack }: StudentPerformanceProps) 
     }
   };
 
+  const getFilteredLeaderboard = (leaderboardData: any[]) => {
+    return leaderboardData.filter((s: any) => {
+      let matchDept = selectedDept === "All";
+      if (!matchDept) {
+        const d = (s.department || "").toUpperCase().replace(/[^A-Z]/g, '');
+        const f = selectedDept.toUpperCase().replace(/[^A-Z]/g, '');
+        
+        if (f.includes('INFORMATIONTECHNOLOGY') && (d === 'IT' || d.includes('INFORMATIONTECHNOLOGY'))) matchDept = true;
+        else if (f.includes('COMPUTERSCIENCE') && (d === 'CS' || d === 'CSE' || d.includes('COMPUTERSCIENCE'))) matchDept = true;
+        else if (f.includes('ARTIFICIALINTELLIGENCE') && (d === 'AI' || d === 'AIDS' || d.includes('ARTIFICIALINTELLIGENCE'))) matchDept = true;
+        else if (f.includes('CYBER') && (d === 'CY' || d.includes('CYBER'))) matchDept = true;
+        else if (f.includes('ELECTRONICS') && (d === 'EC' || d === 'ECE' || d.includes('ELECTRONICS'))) matchDept = true;
+        else if (f.includes('BIOMEDICAL') && (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL'))) matchDept = true;
+        else if (f.includes('MECHANICAL') && (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL'))) matchDept = true;
+        else if (f.includes('AGRICULTUR') && (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR'))) matchDept = true;
+        else if (s.department === selectedDept) matchDept = true;
+      }
+      
+      const matchYear = selectedYear === "All" || s.academicYear === selectedYear;
+      return matchDept && matchYear;
+    });
+  };
+
   // Calculate stats
   const deptRegistrationData = analyticsData?.departmentStats || [];
   const totalStudents = deptRegistrationData.reduce((acc: number, curr: any) => acc + curr.total, 0);

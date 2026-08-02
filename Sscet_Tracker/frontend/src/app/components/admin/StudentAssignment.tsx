@@ -203,8 +203,22 @@ export default function StudentAssignment() {
     return students.filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             s.registerNumber.toLowerCase().includes(searchQuery.toLowerCase());
-      const shortDept = departmentFilter === "All" ? "All" : (departmentFilter.split("(")[1]?.replace(")","").replace("&", "") || departmentFilter);
-      const matchesDept = departmentFilter === "All" || s.department === shortDept || s.department === departmentFilter;
+      let matchesDept = departmentFilter === "All";
+      if (!matchesDept) {
+        const d = (s.department || "").toUpperCase().replace(/[^A-Z]/g, '');
+        const f = departmentFilter.toUpperCase().replace(/[^A-Z]/g, '');
+        
+        if (f.includes('INFORMATIONTECHNOLOGY') && (d === 'IT' || d.includes('INFORMATIONTECHNOLOGY'))) matchesDept = true;
+        else if (f.includes('COMPUTERSCIENCE') && (d === 'CS' || d === 'CSE' || d.includes('COMPUTERSCIENCE'))) matchesDept = true;
+        else if (f.includes('ARTIFICIALINTELLIGENCE') && (d === 'AI' || d === 'AIDS' || d.includes('ARTIFICIALINTELLIGENCE'))) matchesDept = true;
+        else if (f.includes('CYBER') && (d === 'CY' || d.includes('CYBER'))) matchesDept = true;
+        else if (f.includes('ELECTRONICS') && (d === 'EC' || d === 'ECE' || d.includes('ELECTRONICS'))) matchesDept = true;
+        else if (f.includes('BIOMEDICAL') && (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL'))) matchesDept = true;
+        else if (f.includes('MECHANICAL') && (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL'))) matchesDept = true;
+        else if (f.includes('AGRICULTUR') && (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR'))) matchesDept = true;
+        else if (s.department === departmentFilter) matchesDept = true;
+      }
+      
       const matchesYear = yearFilter === "All" || (s as any).academicYear === yearFilter; // Type hack for potential year mismatch
       
       const assignment = assignments.find(a => a.studentRegisterNumber === s.registerNumber);
