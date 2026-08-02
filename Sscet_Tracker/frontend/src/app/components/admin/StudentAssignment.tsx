@@ -216,7 +216,7 @@ export default function StudentAssignment() {
         else if (f.includes('BIOMEDICAL') && (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL'))) matchesDept = true;
         else if (f.includes('MECHANICAL') && (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL'))) matchesDept = true;
         else if (f.includes('AGRICULTUR') && (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR'))) matchesDept = true;
-        else if (s.department === departmentFilter) matchesDept = true;
+        else if (d === f || s.department === departmentFilter) matchesDept = true;
       }
       
       const matchesYear = yearFilter === "All" || (s as any).academicYear === yearFilter; // Type hack for potential year mismatch

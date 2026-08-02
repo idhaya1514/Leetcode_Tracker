@@ -597,7 +597,17 @@ export default function StaffTasks() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
-                {tasks.filter(t => !searchQuery || t.title?.toLowerCase().includes(searchQuery.toLowerCase()) || t.taskType?.toLowerCase().includes(searchQuery.toLowerCase()) || t.topic?.toLowerCase().includes(searchQuery.toLowerCase()) || t.difficulty?.toLowerCase().includes(searchQuery.toLowerCase())).map((task) => (
+                {tasks.filter(t => {
+                  if (!searchQuery) return true;
+                  const q = searchQuery.toLowerCase();
+                  return (
+                    (t.title && t.title.toLowerCase().includes(q)) ||
+                    (t.taskType && t.taskType.toLowerCase().includes(q)) ||
+                    (t.topic && t.topic.toLowerCase().includes(q)) ||
+                    (t.difficulty && t.difficulty.toLowerCase().includes(q)) ||
+                    (t.leetcodeProblem && String(t.leetcodeProblem).toLowerCase().includes(q))
+                  );
+                }).map((task) => (
                   <tr key={task.id} className="hover:bg-cream-200/50 transition-colors">
                     <td className="px-5 py-4">
                       {task.taskType === "TARGET" ? (

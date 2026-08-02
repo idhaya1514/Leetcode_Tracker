@@ -674,10 +674,22 @@ app.post('/api/staff/create', async (req, res) => {
 
 app.post('/api/staff/assign', async (req, res) => {
   try {
-    const { staffId, studentRegisterNumbers } = req.body;
+    const { staffId, studentRegisterNumbers, adminName } = req.body;
     if (!staffId || !Array.isArray(studentRegisterNumbers)) {
       return res.status(400).json({ error: 'Invalid payload' });
     }
+
+    const newStaff = await prisma.staff.findUnique({ where: { staffId } });
+    if (!newStaff) return res.status(404).json({ error: 'Staff not found' });
+    
+    const students = await prisma.student.findMany({
+      where: { registerNumber: { in: studentRegisterNumbers } }
+    });
+    
+    const existingAssignments = await prisma.staffStudentAssignment.findMany({
+      where: { studentRegisterNumber: { in: studentRegisterNumbers } },
+      include: { staff: true }
+    });
 
     const promises = studentRegisterNumbers.map(regNo => {
       return prisma.staffStudentAssignment.upsert({
@@ -688,7 +700,23 @@ app.post('/api/staff/assign', async (req, res) => {
         create: { staffId, studentRegisterNumber: regNo }
       });
     });
-    await Promise.all(promises);
+
+    const historyPromises = students.map(student => {
+      const existing = existingAssignments.find(a => a.studentRegisterNumber === student.registerNumber);
+      if (existing && existing.staffId === staffId) return null;
+      
+      return prisma.assignmentHistory.create({
+        data: {
+          registerNumber: student.registerNumber,
+          studentName: student.name,
+          previousStaff: existing ? existing.staff.name : null,
+          newStaff: newStaff.name,
+          assignedBy: adminName || "Admin",
+        }
+      });
+    }).filter(Boolean);
+
+    await Promise.all([...promises, ...historyPromises]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to assign' });
@@ -696,14 +724,38 @@ app.post('/api/staff/assign', async (req, res) => {
 });
 
 app.get('/api/staff/assignment_history', async (req, res) => {
-  // Mock history as there is no schema support yet
-  res.json([]);
+  try {
+    const history = await prisma.assignmentHistory.findMany({
+      orderBy: { assignedAt: 'desc' }
+    });
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
 });
 
 app.delete('/api/staff/assignments/:registerNumber', async (req, res) => {
   try {
+    const { registerNumber } = req.params;
+    const existing = await prisma.staffStudentAssignment.findFirst({
+      where: { studentRegisterNumber: registerNumber },
+      include: { staff: true, student: true }
+    });
+    
+    if (existing) {
+      await prisma.assignmentHistory.create({
+        data: {
+          registerNumber: registerNumber,
+          studentName: existing.student.name,
+          previousStaff: existing.staff.name,
+          newStaff: "UNASSIGNED",
+          assignedBy: "Admin",
+        }
+      });
+    }
+
     await prisma.staffStudentAssignment.deleteMany({
-      where: { studentRegisterNumber: req.params.registerNumber }
+      where: { studentRegisterNumber: registerNumber }
     });
     res.json({ success: true });
   } catch (err) {
@@ -844,6 +896,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 app.delete('/api/tasks/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    await prisma.taskAssignment.deleteMany({ where: { taskId: id } });
     await prisma.task.delete({ where: { id } });
     res.json({ success: true });
   } catch (err) {

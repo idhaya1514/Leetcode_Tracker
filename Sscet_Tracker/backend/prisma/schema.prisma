@@ -100,6 +100,7 @@ model Student {
   taskAssignments    TaskAssignment[]
   attendanceRecords  Attendance[]
   staffAssignments   StaffStudentAssignment[]
+  assignmentHistory  AssignmentHistory[]
 }
 
 // --- LeetCode Tracking ---
@@ -219,6 +220,19 @@ model Attendance {
   student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, date])
+}
+
+// --- History ---
+model AssignmentHistory {
+  id               String   @id @default(uuid())
+  registerNumber   String
+  studentName      String
+  previousStaff    String?
+  newStaff         String
+  assignedBy       String
+  assignedAt       DateTime @default(now())
+
+  student          Student  @relation(fields: [registerNumber], references: [registerNumber], onDelete: Cascade)
 }
 
 // --- System & Logs ---

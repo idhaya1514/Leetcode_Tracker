@@ -1,4 +1,4 @@
-Lname: Production CD Pipeline
+name: Production CD Pipeline
 
 on:
   push:
