@@ -70,19 +70,19 @@ export default function StudentManagement() {
     let newDept = formData.department;
     let changed = false;
 
-    if (reg.includes("E23")) { newYear = "Final Year"; changed = true; }
-    else if (reg.includes("E24")) { newYear = "Third Year"; changed = true; }
-    else if (reg.includes("E25")) { newYear = "Second Year"; changed = true; }
-    else if (reg.includes("E26")) { newYear = "First Year"; changed = true; }
+    if (reg.includes("E23")) { newYear = "IV"; changed = true; }
+    else if (reg.includes("E24")) { newYear = "III"; changed = true; }
+    else if (reg.includes("E25")) { newYear = "II"; changed = true; }
+    else if (reg.includes("E26")) { newYear = "I"; changed = true; }
 
-    if (reg.includes("AI")) { newDept = "Artificial Intelligence and Data Science"; changed = true; }
-    else if (reg.includes("CS")) { newDept = "Computer Science and Engineering"; changed = true; }
-    else if (reg.includes("IT")) { newDept = "Information Technology"; changed = true; }
-    else if (reg.includes("CY")) { newDept = "Cyber Security"; changed = true; }
-    else if (reg.includes("AG")) { newDept = "Agricultural Engineering"; changed = true; }
-    else if (reg.includes("ME")) { newDept = "Mechanical Engineering"; changed = true; }
-    else if (reg.includes("EC")) { newDept = "Electronics and Communication Engineering"; changed = true; }
-    else if (reg.includes("BM")) { newDept = "Biomedical Engineering"; changed = true; }
+    if (reg.includes("AI")) { newDept = "AIDS"; changed = true; }
+    else if (reg.includes("CS")) { newDept = "CSE"; changed = true; }
+    else if (reg.includes("IT")) { newDept = "IT"; changed = true; }
+    else if (reg.includes("CY")) { newDept = "CYBER"; changed = true; }
+    else if (reg.includes("AG")) { newDept = "AGRI"; changed = true; }
+    else if (reg.includes("ME")) { newDept = "MECH"; changed = true; }
+    else if (reg.includes("EC")) { newDept = "ECE"; changed = true; }
+    else if (reg.includes("BM")) { newDept = "BME"; changed = true; }
 
     if (changed) {
       setFormData(p => {
@@ -213,18 +213,7 @@ export default function StudentManagement() {
       
       let matchDept = filterDept === "All";
       if (!matchDept) {
-        const d = (s.department || "").toUpperCase().replace(/[^A-Z]/g, '');
-        const f = filterDept.toUpperCase().replace(/[^A-Z]/g, '');
-        
-        if (f.includes('INFORMATIONTECHNOLOGY') && (d === 'IT' || d.includes('INFORMATIONTECHNOLOGY'))) matchDept = true;
-        else if (f.includes('COMPUTERSCIENCE') && (d === 'CS' || d === 'CSE' || d.includes('COMPUTERSCIENCE'))) matchDept = true;
-        else if (f.includes('ARTIFICIALINTELLIGENCE') && (d === 'AI' || d === 'AIDS' || d.includes('ARTIFICIALINTELLIGENCE'))) matchDept = true;
-        else if (f.includes('CYBER') && (d === 'CY' || d.includes('CYBER'))) matchDept = true;
-        else if (f.includes('ELECTRONICS') && (d === 'EC' || d === 'ECE' || d.includes('ELECTRONICS'))) matchDept = true;
-        else if (f.includes('BIOMEDICAL') && (d === 'BM' || d === 'BME' || d.includes('BIOMEDICAL'))) matchDept = true;
-        else if (f.includes('MECHANICAL') && (d === 'ME' || d === 'MECH' || d.includes('MECHANICAL'))) matchDept = true;
-        else if (f.includes('AGRICULTUR') && (d === 'AG' || d === 'AGRI' || d.includes('AGRICULTUR'))) matchDept = true;
-        else if (s.department === filterDept) matchDept = true;
+        if (s.department === filterDept) matchDept = true;
       }
 
       return matchSearch && matchYear && matchDept;
@@ -303,7 +292,7 @@ export default function StudentManagement() {
           className="px-3 py-2 bg-cream-100 border border-stone-200/60 text-ink-600 text-sm rounded-lg shadow-sm outline-none focus:border-sapphire-600 max-w-[200px] truncate"
         >
           <option value="All">All Departments</option>
-          {DEPARTMENTS.map(d => <option key={d} value={d}>{d.split("(")[1]?.replace(")","") || d}</option>)}
+          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
       </div>
 
@@ -337,7 +326,7 @@ export default function StudentManagement() {
                     </td>
                     <td className="px-5 py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-cream-200 text-ink-600 border border-stone-200/60">
-                        {student.department.split("(")[1]?.replace(")","") || student.department}
+                        {student.department || "-"}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-sm text-ink-600">{student.academicYear}</td>

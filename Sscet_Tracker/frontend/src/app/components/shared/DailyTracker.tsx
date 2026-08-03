@@ -251,7 +251,7 @@ export default function DailyTracker({ onBack }: DailyTrackerProps) {
                   >
                     <option value="all">All Depts</option>
                     {DEPARTMENTS.map((d) => {
-                      const short = d.includes("(") ? d.split("(")[1].replace(")", "") : d;
+                      const short = d;
                       return <option key={d} value={d}>{short}</option>;
                     })}
                   </select>

@@ -82,7 +82,7 @@ export default function StaffStudents() {
                     </td>
                     <td className="px-5 py-3">
                       <div>
-                        <p className="text-[12px] font-medium text-slate-700">{student.department?.split("(")[1]?.replace(")","") || student.department}</p>
+                        <p className="text-[12px] font-medium text-slate-700">{student.department}</p>
                         <p className="text-[11px] text-slate-500 mt-0.5">{student.academicYear || "I"} - Sec A</p>
                       </div>
                     </td>
