@@ -111,35 +111,7 @@ export default function StudentTasks() {
                   <p className="text-slate-500 text-sm mt-2">{task.description}</p>
                 )}
 
-                {task.leetcodeUrl && (
-                  <div className="mt-4 flex gap-3">
-                    <a 
-                      href={task.leetcodeUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 transition-colors"
-                    >
-                      <Code2 className="w-4 h-4 text-orange-500" />
-                      Solve on LeetCode
-                    </a>
-                    {!isCompleted && (
-                      <button 
-                        onClick={async () => {
-                          try {
-                            await markTaskComplete(assignment.id);
-                            loadTasks();
-                          } catch (e) {
-                            console.error(e);
-                          }
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium rounded-lg border border-emerald-200 transition-colors"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Mark Solved
-                      </button>
-                    )}
-                  </div>
-                )}
+
               </div>
 
               <div className="bg-slate-50 p-6 md:w-64 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l border-slate-100">
@@ -158,9 +130,21 @@ export default function StudentTasks() {
                 ) : (
                   <div className="flex flex-col items-center gap-3 w-full">
                     <p className="text-sm font-medium text-slate-500">Status</p>
-                    <div className="w-full py-2.5 bg-white border border-slate-200 rounded-lg text-slate-400 font-semibold text-sm">
-                      Pending Sync
-                    </div>
+                    {task.leetcodeUrl ? (
+                      <a 
+                        href={task.leetcodeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <Code2 className="w-4 h-4" />
+                        Solve
+                      </a>
+                    ) : (
+                      <div className="w-full py-2.5 bg-white border border-slate-200 rounded-lg text-slate-400 font-semibold text-sm">
+                        Pending Sync
+                      </div>
+                    )}
                     <p className="text-[10px] text-slate-400 max-w-[150px] leading-relaxed">
                       Complete this on LeetCode. Progress will sync automatically.
                     </p>
