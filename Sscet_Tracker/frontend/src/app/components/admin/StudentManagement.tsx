@@ -208,8 +208,8 @@ export default function StudentManagement() {
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
-      const matchSearch = !searchTerm || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.registerNumber.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchYear = filterYear === "All" || s.academicYear === filterYear;
+      const matchSearch = !searchTerm || (s.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (s.registerNumber || "").toLowerCase().includes(searchTerm.toLowerCase());
+      const matchYear = filterYear === "All" || (s.academicYear || "I") === filterYear;
       
       let matchDept = filterDept === "All";
       if (!matchDept) {
