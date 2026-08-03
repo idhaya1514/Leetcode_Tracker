@@ -42,16 +42,15 @@ initializeCronJobs();
 
 // --- Seed Admin ---
 async function seedAdmin() {
-  const admin = await prisma.admin.findFirst();
-  if (!admin) {
-    await prisma.admin.create({
-      data: {
-        email: 'admin@sscet.edu.in',
-        name: 'SSCET Admin',
-        password: await bcrypt.hash('adminsscet@2026', 10)
-      }
-    });
-  }
+  await prisma.admin.upsert({
+    where: { email: 'sscet' },
+    update: {},
+    create: {
+      email: 'sscet',
+      name: 'SSCET Admin',
+      password: await bcrypt.hash('adminsscet@2026', 10)
+    }
+  });
 }
 seedAdmin();
 

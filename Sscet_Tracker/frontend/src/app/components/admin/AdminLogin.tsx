@@ -23,7 +23,7 @@ interface AdminLoginProps {
 }
 
 export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +32,7 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!email.trim() || !password) {
+    if (!username.trim() || !password) {
       setError("Please fill in all fields.");
       return;
     }
@@ -41,7 +41,7 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password, role: 'admin' })
+        body: JSON.stringify({ email: username.trim(), password, role: 'admin' })
       });
       const data = await res.json();
       
@@ -65,8 +65,8 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
           </div>
         )}
 
-        <Field label="Admin Email" icon={User}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="Enter admin email" />
+        <Field label="Admin Username" icon={User}>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className={inputCls} placeholder="Enter admin username" />
         </Field>
         
         <Field label="Admin Password" icon={Lock}>
