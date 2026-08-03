@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Users, UserCheck, UserX, Activity, Code2, Target, Trophy, Flame, ChevronRight, TrendingUp } from "lucide-react";
-import { checkServerHealth, getDashboardOverview } from "../../services/api";
+import { checkServerHealth, getDashboardOverview, getStudents } from "../../services/api";
 import { toast } from "sonner";
 import {
   AreaChart,
@@ -24,17 +24,34 @@ export default function AdminPanel({ onLogout, onNavigate }: AdminPanelProps) {
 
   const navigate = useNavigate();
 
-  const handleExportReport = () => {
+  const handleExportReport = async () => {
     try {
-      const csvContent = "data:text/csv;charset=utf-8,Student Name,Department,Year,Status\nJohn Doe,CSE,3,Active\nJane Smith,IT,2,Active\n";
+      const toastId = toast.loading("Generating report...");
+      const students = await getStudents(true); // Fetch latest students
+      
+      let csvContent = "data:text/csv;charset=utf-8,Name,Register Number,Department,Year,LeetCode Username,Total Solved\n";
+      
+      students.forEach(s => {
+        const row = [
+          `"${s.name}"`,
+          `"${s.registerNumber}"`,
+          `"${s.department || ''}"`,
+          `"${s.academicYear || ''}"`,
+          `"${s.leetCodeUsername || 'Not Linked'}"`,
+          s.totalSolved || 0
+        ].join(",");
+        csvContent += row + "\n";
+      });
+
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "system_report.csv");
+      link.setAttribute("download", `student_report_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success("Report downloaded successfully");
+      
+      toast.success("Report downloaded successfully", { id: toastId });
     } catch (e) {
       toast.error("Failed to export report");
     }
