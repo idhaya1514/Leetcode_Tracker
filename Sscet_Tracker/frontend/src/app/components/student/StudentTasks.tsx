@@ -30,11 +30,16 @@ export default function StudentTasks() {
             const recentSubmissions = lcData.recentSubmissions || [];
             
             for (const assignment of problemTasks) {
-              if (assignment.status !== "COMPLETED" && assignment.task?.leetcodeProblem) {
-                const problemStr = assignment.task.leetcodeProblem.toLowerCase();
+              if (assignment.status !== "COMPLETED") {
+                const problemStr = (assignment.task?.leetcodeProblem || "").toLowerCase();
+                const titleStr = (assignment.task?.title || "").toLowerCase();
+                
                 const isSolved = recentSubmissions.some((sub: any) => 
                   sub.statusDisplay === "Accepted" &&
-                  (sub.title.toLowerCase() === problemStr || sub.titleSlug.toLowerCase() === problemStr)
+                  (
+                    (problemStr && (sub.title.toLowerCase() === problemStr || sub.titleSlug.toLowerCase() === problemStr)) ||
+                    (titleStr && (sub.title.toLowerCase() === titleStr || sub.titleSlug.toLowerCase() === titleStr))
+                  )
                 );
                 
                 if (isSolved) {

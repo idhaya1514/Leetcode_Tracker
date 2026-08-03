@@ -251,6 +251,7 @@ export default function StaffTasks() {
         await Promise.all(problemTasks.map(async (pt) => {
           const payload = {
             ...pt,
+            leetcodeUrl: pt.url,
             taskType: "PROBLEM",
             targetEasy: 0,
             targetMedium: 0,
