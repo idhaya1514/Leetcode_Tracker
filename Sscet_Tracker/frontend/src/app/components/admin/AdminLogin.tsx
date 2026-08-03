@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { User, Lock, Eye, EyeOff, Loader2, Shield } from "lucide-react";
+import { API_BASE_URL } from "../../services/api";
 
 const inputCls = "w-full px-4 py-3 pl-11 bg-cream-100 border border-stone-200 rounded-lg text-ink-900 text-sm font-medium outline-none transition-all focus:border-sapphire-800 focus:ring-4 focus:ring-sapphire-800/10 placeholder:text-stone-400";
 const iconCls = "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 transition-colors group-focus-within:text-sapphire-800";
@@ -38,7 +39,7 @@ export default function AdminLogin({ onLogin, onBack }: AdminLoginProps) {
     }
     setIsLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: username.trim().toLowerCase(), password, role: 'admin' })

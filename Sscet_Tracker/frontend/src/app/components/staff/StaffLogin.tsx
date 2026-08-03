@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { IdCard, Lock, Eye, EyeOff, Loader2, BookOpen, User, Briefcase, ArrowLeft, Mail, ShieldCheck } from "lucide-react";
-import { requestPasswordResetOTP, verifyPasswordResetOTP, updatePasswordSecurely } from "../../services/api";
+import { User, Lock, Mail, ChevronRight, Eye, EyeOff, Loader2, BookOpen, IdCard, Briefcase, ArrowLeft, ShieldCheck } from "lucide-react";
+import { API_BASE_URL, requestPasswordResetOTP, verifyPasswordResetOTP, updatePasswordSecurely } from "../../services/api";
 import { toast } from "sonner";
 
 const inputCls = "w-full px-4 py-3 pl-11 bg-cream-100 border border-stone-200 rounded-lg text-ink-900 text-sm font-medium outline-none transition-all focus:border-sapphire-800 focus:ring-4 focus:ring-sapphire-800/10 placeholder:text-stone-400";
@@ -89,7 +89,7 @@ export default function StaffLogin({
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password, role: 'staff' })
