@@ -22,7 +22,7 @@ import {
   LeetCodeStats,
   getLeetCodeProfileUrl,
 } from "../../services/api";
-import { Lock, Key, Save, Shield } from "lucide-react";
+import { Lock, Key, Save, Shield, Bell } from "lucide-react";
 import { toast } from "sonner";
 
 interface StudentProfileProps {
