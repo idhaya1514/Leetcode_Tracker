@@ -149,7 +149,7 @@ app.get('/api/students', async (req, res) => {
       id: s.id,
       name: s.name,
       registerNumber: s.registerNumber,
-      department: s.department?.name || '',
+      department: s.department?.code || s.department?.name || '',
       academicYear: s.academicYear?.year || '',
       email: s.email,
       leetCodeUrl: s.leetCodeProfile?.profileUrl,

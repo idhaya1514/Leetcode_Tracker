@@ -78,7 +78,7 @@ export default function StudentManagement() {
     if (reg.includes("AI")) { newDept = "AIDS"; changed = true; }
     else if (reg.includes("CS")) { newDept = "CSE"; changed = true; }
     else if (reg.includes("IT")) { newDept = "IT"; changed = true; }
-    else if (reg.includes("CY")) { newDept = "CYBER"; changed = true; }
+    else if (reg.includes("CB") || reg.includes("CY")) { newDept = "CYBER"; changed = true; }
     else if (reg.includes("AG")) { newDept = "AGRI"; changed = true; }
     else if (reg.includes("ME")) { newDept = "MECH"; changed = true; }
     else if (reg.includes("EC")) { newDept = "ECE"; changed = true; }
@@ -97,18 +97,36 @@ export default function StudentManagement() {
     setIsLoading(true);
     try {
       const data = await getStudents();
-      setStudents(data.map((s: any) => ({
-        id: String(s.id),
-        name: s.name,
-        registerNumber: s.registerNumber,
-        department: s.department,
-        academicYear: s.academicYear || "I",
-        email: s.email,
-        leetCodeUrl: s.leetCodeUrl,
-        leetCodeUsername: s.leetCodeUsername,
-        totalSolved: s.totalSolved,
-        createdAt: s.createdAt || new Date().toISOString()
-      })));
+      setStudents(data.map((s: any) => {
+        let year = s.academicYear || "I";
+        if (year === "First") year = "I";
+        if (year === "Second") year = "II";
+        if (year === "Third") year = "III";
+        if (year === "Fourth") year = "IV";
+
+        let dept = s.department || "";
+        if (dept.toLowerCase().includes("computer science")) dept = "CSE";
+        if (dept.toLowerCase().includes("information technology")) dept = "IT";
+        if (dept.toLowerCase().includes("artificial intelligence")) dept = "AIDS";
+        if (dept.toLowerCase().includes("cyber")) dept = "CYBER";
+        if (dept.toLowerCase().includes("agriculture")) dept = "AGRI";
+        if (dept.toLowerCase().includes("mechanical")) dept = "MECH";
+        if (dept.toLowerCase().includes("electronics")) dept = "ECE";
+        if (dept.toLowerCase().includes("biomedical")) dept = "BME";
+
+        return {
+          id: String(s.id),
+          name: s.name,
+          registerNumber: s.registerNumber,
+          department: dept,
+          academicYear: year,
+          email: s.email,
+          leetCodeUrl: s.leetCodeUrl,
+          leetCodeUsername: s.leetCodeUsername,
+          totalSolved: s.totalSolved,
+          createdAt: s.createdAt || new Date().toISOString()
+        };
+      }));
     } catch (error: any) {
       toast.error("Failed to load students: " + error.message);
     } finally {

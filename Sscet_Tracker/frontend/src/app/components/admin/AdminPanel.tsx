@@ -32,11 +32,27 @@ export default function AdminPanel({ onLogout, onNavigate }: AdminPanelProps) {
       let csvContent = "data:text/csv;charset=utf-8,Name,Register Number,Department,Year,LeetCode Username,Total Solved\n";
       
       students.forEach(s => {
+        let year = s.academicYear || "I";
+        if (year === "First") year = "I";
+        if (year === "Second") year = "II";
+        if (year === "Third") year = "III";
+        if (year === "Fourth") year = "IV";
+
+        let dept = s.department || "";
+        if (dept.toLowerCase().includes("computer science")) dept = "CSE";
+        if (dept.toLowerCase().includes("information technology")) dept = "IT";
+        if (dept.toLowerCase().includes("artificial intelligence")) dept = "AIDS";
+        if (dept.toLowerCase().includes("cyber")) dept = "CYBER";
+        if (dept.toLowerCase().includes("agriculture")) dept = "AGRI";
+        if (dept.toLowerCase().includes("mechanical")) dept = "MECH";
+        if (dept.toLowerCase().includes("electronics")) dept = "ECE";
+        if (dept.toLowerCase().includes("biomedical")) dept = "BME";
+
         const row = [
           `"${s.name}"`,
           `"${s.registerNumber}"`,
-          `"${s.department || ''}"`,
-          `"${s.academicYear || ''}"`,
+          `"${dept}"`,
+          `"${year}"`,
           `"${s.leetCodeUsername || 'Not Linked'}"`,
           s.totalSolved || 0
         ].join(",");

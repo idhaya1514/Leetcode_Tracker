@@ -22,7 +22,7 @@ const StaffNotifications = lazy(() => import("./components/staff/StaffNotificati
 const StaffProfile = lazy(() => import("./components/staff/StaffProfile"));
 const StaffSettings = lazy(() => import("./components/staff/StaffSettings"));
 const StudentProfile = lazy(() => import("./components/student/StudentProfile"));
-const StudentSettings = lazy(() => import("./components/student/StudentSettings"));
+
 const StudentNotifications = lazy(() => import("./components/student/StudentNotifications"));
 const StudentDailyTarget = lazy(() => import("./components/student/StudentDailyTarget"));
 const StudentDailyProgress = lazy(() => import("./components/student/StudentDailyProgress"));
@@ -209,7 +209,7 @@ export default function App() {
             <Route path="reports" element={<StudentReports />} />
             <Route path="notifications" element={<StudentNotifications student={student!} />} />
             <Route path="profile" element={<StudentProfile student={student!} onBack={() => navigate('/student')} />} />
-            <Route path="settings" element={<StudentSettings />} />
+
           </Route>
 
           {/* Fallback */}

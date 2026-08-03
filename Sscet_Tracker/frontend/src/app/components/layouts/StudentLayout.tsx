@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { LayoutDashboard, CheckSquare, Code2, Target, BarChart3, FileText, Bell, User, Settings } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Code2, Target, BarChart3, FileText, Bell, User } from 'lucide-react';
 
 export default function StudentLayout({ onLogout, student }: { onLogout: () => void, student: any }) {
   const navigate = useNavigate();
@@ -15,7 +15,6 @@ export default function StudentLayout({ onLogout, student }: { onLogout: () => v
     { label: 'Reports', path: '/student/reports', icon: FileText },
     { label: 'Notifications', path: '/student/notifications', icon: Bell },
     { label: 'Profile', path: '/student/profile', icon: User },
-    { label: 'Settings', path: '/student/settings', icon: Settings },
   ];
 
   return (

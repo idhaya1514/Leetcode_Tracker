@@ -20,6 +20,35 @@ export default function StudentTasks() {
       const data = await getStudentTasks(student.registerNumber);
       // Filter tasks that are type PROBLEM
       const problemTasks = data.filter((t: any) => t.task?.taskType === "PROBLEM");
+      
+      // Auto-complete logic using LeetCode API
+      if (student.leetCodeUsername && problemTasks.length > 0) {
+        try {
+          const apiRes = await fetch(`https://leetcode-api-faisalshohag.vercel.app/${student.leetCodeUsername}`);
+          if (apiRes.ok) {
+            const lcData = await apiRes.json();
+            const recentSubmissions = lcData.recentSubmissions || [];
+            
+            for (const assignment of problemTasks) {
+              if (assignment.status !== "COMPLETED" && assignment.task?.leetcodeProblem) {
+                const problemStr = assignment.task.leetcodeProblem.toLowerCase();
+                const isSolved = recentSubmissions.some((sub: any) => 
+                  sub.statusDisplay === "Accepted" &&
+                  (sub.title.toLowerCase() === problemStr || sub.titleSlug.toLowerCase() === problemStr)
+                );
+                
+                if (isSolved) {
+                  await markTaskComplete(assignment.id);
+                  assignment.status = "COMPLETED"; // Optimistic update
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Failed to check LeetCode API for auto-complete", e);
+        }
+      }
+
       setTasks(problemTasks);
     } catch (error) {
       console.error("Failed to load tasks", error);
