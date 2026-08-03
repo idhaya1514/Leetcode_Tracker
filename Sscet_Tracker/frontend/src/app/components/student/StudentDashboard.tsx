@@ -5,7 +5,7 @@ import {
   ExternalLink, ListTodo, Target, TrendingUp, Bell, Clock,
   ChevronRight, MoreHorizontal, Activity, ArrowRight, Play, Eye
 } from "lucide-react";
-import { fetchStudentDashboardData, fetchLeetCodeStats, updateMobileNumber, LeetCodeStats, syncLeetCodeTaskProgress } from "../../services/api";
+import { fetchStudentDashboardData, fetchLeetCodeStats, updateMobileNumber, LeetCodeStats, syncLeetCodeTaskProgress, markTaskComplete } from "../../services/api";
 import { toast } from "sonner";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 
@@ -106,6 +106,12 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
   const pendingTasks = data?.taskAssignments?.filter((a: any) => a.status !== "COMPLETED") || [];
   const completedTasks = data?.taskAssignments?.filter((a: any) => a.status === "COMPLETED") || [];
 
+  const allTasks = [...pendingTasks, ...completedTasks];
+  const latestTargetTask = allTasks.find(a => a.task?.taskType === "TARGET")?.task;
+  const targetGoal = latestTargetTask ? 
+    (latestTargetTask.targetEasy + latestTargetTask.targetMedium + latestTargetTask.targetHard) 
+    : 5;
+
   const difficultyData = [
     { name: 'Easy', value: easySolved, color: '#10b981' },
     { name: 'Medium', value: mediumSolved, color: '#f59e0b' },
@@ -189,16 +195,16 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
               <div className="relative w-16 h-16 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-ink-700" />
-                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * Math.min(solvedToday, 5) / 5)} className="text-sapphire-500 transition-all duration-1000" />
+                  <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="175" strokeDashoffset={175 - (175 * Math.min(solvedToday, targetGoal) / targetGoal)} className="text-sapphire-500 transition-all duration-1000" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center flex-col">
-                  <span className="text-lg font-bold">{Math.min(solvedToday, 5)}</span>
-                  <span className="text-[9px] text-stone-400 -mt-1">/ 5</span>
+                  <span className="text-lg font-bold">{Math.min(solvedToday, targetGoal)}</span>
+                  <span className="text-[9px] text-stone-400 -mt-1">/ {targetGoal}</span>
                 </div>
               </div>
             </div>
             <p className="text-xs text-stone-400 mt-2">
-              {solvedToday >= 5 ? 'Target Achieved! 🏆' : `${5 - solvedToday} more to go!`}
+              {solvedToday >= targetGoal ? 'Target Achieved! 🏆' : `${targetGoal - solvedToday} more to go!`}
             </p>
           </div>
         </div>
@@ -296,9 +302,22 @@ export default function StudentDashboard({ student }: StudentDashboardProps) {
                         </span>
                       </td>
                       <td className="p-4 pr-6 text-right">
-                        <button className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-cream-100 border border-stone-200 rounded-lg text-sm font-medium text-ink-900 hover:bg-cream-200 hover:text-sapphire-800 transition-colors shadow-sm">
-                          <Play className="w-3.5 h-3.5" /> Solve
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <a href={task.leetcodeUrl || `https://leetcode.com/problems/${task.leetcodeProblem || ''}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-cream-100 border border-stone-200 rounded-lg text-sm font-medium text-ink-900 hover:bg-cream-200 hover:text-sapphire-800 transition-colors shadow-sm">
+                            <Play className="w-3.5 h-3.5" /> Solve
+                          </a>
+                          <button onClick={async () => {
+                            try {
+                              await markTaskComplete(assignment.id);
+                              toast.success("Task marked as complete!");
+                              loadDashboard();
+                            } catch(err) {
+                              toast.error("Failed to mark as complete");
+                            }
+                          }} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors shadow-sm">
+                            <CheckCircle className="w-3.5 h-3.5" /> Mark
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     );

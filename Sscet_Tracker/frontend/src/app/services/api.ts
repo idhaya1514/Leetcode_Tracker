@@ -2370,3 +2370,9 @@ export async function syncLeetCodeTaskProgress(registerNumber: string): Promise<
   return res.json();
 }
 
+export async function markTaskComplete(assignmentId: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/tasks/complete/${assignmentId}`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to mark task as completed");
+  return res.json();
+}
+

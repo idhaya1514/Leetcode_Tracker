@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { CheckSquare, CheckCircle2, Clock, Code2 } from "lucide-react";
 import { useOutletContext } from "react-router";
-import { getStudentTasks } from "../../services/api";
+import { getStudentTasks, markTaskComplete } from "../../services/api";
 
 export default function StudentTasks() {
   const { student } = useOutletContext<{ student: any }>();
@@ -83,7 +83,7 @@ export default function StudentTasks() {
                 )}
 
                 {task.leetcodeUrl && (
-                  <div className="mt-4">
+                  <div className="mt-4 flex gap-3">
                     <a 
                       href={task.leetcodeUrl} 
                       target="_blank" 
@@ -93,6 +93,22 @@ export default function StudentTasks() {
                       <Code2 className="w-4 h-4 text-orange-500" />
                       Solve on LeetCode
                     </a>
+                    {!isCompleted && (
+                      <button 
+                        onClick={async () => {
+                          try {
+                            await markTaskComplete(assignment.id);
+                            loadTasks();
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium rounded-lg border border-emerald-200 transition-colors"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Mark Solved
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

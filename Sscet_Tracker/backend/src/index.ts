@@ -952,6 +952,22 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
+app.post('/api/tasks/complete/:assignmentId', async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const assignment = await prisma.taskAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date()
+      }
+    });
+    res.json({ success: true, assignment });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to mark task as completed' });
+  }
+});
+
 import { syncLeetCodeTasks } from './services/leetcodeSync';
 
 app.post('/api/tasks/sync/:registerNumber', async (req, res) => {
